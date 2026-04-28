@@ -1,0 +1,20 @@
+# .NET / Visual Studio Build-Ordner
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio Cache & User-spezifische Dateien
+.vs/
+*.user
+*.suo
+*.userossc
+*.sln.docstates
+
+# VS Code Settings
+.vscode/
+
+# Betriebssystem-Muell
+Thumbs.db
+.DS_Store
+
+# Falls ihr Rider nutzt
+.idea/

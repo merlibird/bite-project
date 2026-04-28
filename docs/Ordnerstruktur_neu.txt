@@ -1,0 +1,99 @@
+BITE/
+│
+├── src/
+│   ├── Bite.Api/                   	(Web API Projekt)
+│   │   ├── Controllers/            	(Nimmt HTTP-Anfragen entgegen)
+│   │   │   ├── RestaurantController.cs
+│   │   │   ├── OrderController.cs
+│   │   │   ├── MenuController.cs
+│   │   │   ├── SearchController.cs
+│   │   │   └── StatisticsController.cs
+│   │   ├── Middleware/
+│   │   │   ├── ApiKeyMiddleware.cs
+│   │   │   └── ErrorHandlingMiddleware.cs
+│   │   ├── DTOs/                   	(Data Transfer Objects für API-Austausch)
+│   │   │   ├── RestaurantDto.cs
+│   │   │   ├── OrderRequestDto.cs
+│   │   │   └── ...
+│   │   ├── Program.cs             	 
+│   │   └── appsettings.json
+│   │
+│   ├── Bite.Domain/               	 (Die reinen Entities aus der DB)
+│   │   ├── Restaurant.cs
+│   │   ├── Order.cs
+│   │   ├── Menu.cs
+│   │   └── ...
+│   │ //DAL unter eine wurzel, ein übergeordneter Ordner
+│   ├── Bite.Dal.Common/           	 (Die generische Infrastruktur analog zu FH-Übung)
+│   │   ├── IConnectionFactory.cs
+│   │   ├── DefaultConnectionFactory.cs
+│   │   ├── AdoTemplate.cs
+│   │   ├── QueryParameter.cs
+│   │   ├── ConfigurationUtil.cs
+│   │   └── DbUtil.cs
+│   │
+│   ├── Bite.Dal.Interface/         	(Die DAO-Interfaces)
+│   │   ├── IRestaurantDao.cs
+│   │   ├── IOrderDao.cs
+│   │   ├── IMenuDao.cs
+│   │   └── IDeliveryDao.cs
+│   │
+│   ├── Bite.Dal.Ado/               	(Konkrete Implementierung mit AdoTemplate)
+│   │   ├── AdoRestaurantDao.cs
+│   │   ├── AdoOrderDao.cs
+│   │   ├── AdoMenuDao.cs
+│   │   └── AdoDeliveryDao.cs
+│   │//Services unter eine wurzel, ein übergeordneter Ordner
+│   ├── Bite.Services.Interfaces/   	(Business-Logik-Interfaces)
+│   │   ├── IAuthService.cs
+│   │   ├── IDeliveryCostService.cs
+│   │   ├── IWebhookService.cs
+│   │   ├── ITokenService.cs
+│   │   └── IStatisticsService.cs
+│   │
+│   └── Bite.Services.Implementation/  (Business-Logik implementiert)
+│       ├── AuthService.cs
+│       ├── DeliveryCostService.cs
+│       ├── WebhookService.cs
+│       ├── TokenService.cs
+│       └── StatisticsService.cs
+│
+├── Tests/ (Qualitätssicherung)
+│      ├── UnitTests/ 					(Testet einzelne Methoden isoliert)
+│      │   ├── DeliveryCostServiceTests.cs
+│      │   ├── DistanceCalculatorTests.cs
+│      │   └── etc.
+│      │
+│      ├── IntegrationTests/ 			(Testet das Zusammenspiel mehrerer Komponenten)
+│      │   ├── RestaurantControllerTests.cs
+│      │   ├── OrderControllerTests.cs
+│      │   └── etc.
+│      │
+│      └── TestData/ 					(SQL-Skripte / LocalDB für Testumgebungen)
+│          ├── seed_restaurants.sql
+│          ├── seed_menus.sql
+│          └── seed_orders.sql
+│
+├── docs/
+│   ├── ER_Diagramm.png
+│   └── etc.
+│
+├── BITE.sln
+├── docker-compose.yml
+├── .gitignore
+└── README.md
+
+
+
+
+lt. chati: 
+
+Bite.Services → Bite.Application
+Bite.Dal.*    → Bite.Infrastructure.*
+
+src/
+├── Bite.Api              → eigenes Projekt ✅
+├── Bite.Application      → eigenes Projekt ✅
+├── Bite.Domain           → eigenes Projekt ✅
+├── Bite.Infrastructure   → eigenes Projekt ✅
+├── tests/Bite.UnitTests  → eigenes Projekt ✅
