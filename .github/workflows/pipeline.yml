@@ -1,0 +1,41 @@
+name: BITE CI/CD
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print message
+        run: echo "CI/CD pipeline temporarily disabled until a working build is available."
+
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
+
+      # - name: Setup .NET
+      #   uses: actions/setup-dotnet@v4
+      #   with:
+      #     dotnet-version: '10.0.x'
+
+      # - name: Restore dependencies
+      #   run: dotnet restore
+
+      # - name: Build
+      #   run: dotnet build --no-restore --configuration Release
+
+      # - name: Test
+      #   run: dotnet test --no-build --configuration Release --verbosity normal
+
+      # - name: Publish app
+      #   run: dotnet publish -c Release -o publish
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: bite-app
+      #     path: publish/
