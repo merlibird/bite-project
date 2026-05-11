@@ -1,0 +1,3 @@
+PS C:\Public\SWK4UE\HUE\bite-bb-g1-merl-g1-zimic\Bite> sqllocaldb info
+PS C:\Public\SWK4UE\HUE\bite-bb-g1-merl-g1-zimic\Bite> sqllocaldb info MSSQLLocalDB
+PS C:\Public\SWK4UE\HUE\bite-bb-g1-merl-g1-zimic\Bite> sqllocaldb start MSSQLLocalDB

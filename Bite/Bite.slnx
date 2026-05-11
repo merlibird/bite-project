@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="Bite.Api/Bite.Api.csproj" />
+  <Project Path="Bite.Dal/Bite.Dal.csproj" />
+  <Project Path="Bite.Domain/Bite.Domain.csproj" />
+  <Project Path="Bite.Services/Bite.Services.csproj" />
+  <Project Path="Bite.Tests/Bite.Tests.csproj" />
 </Solution>
