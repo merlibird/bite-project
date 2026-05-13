@@ -1,4 +1,4 @@
-name: mssqlserver-swk5
+name: mssqlserver-bite
 
 services:
   db:
@@ -13,7 +13,7 @@ services:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -U sa -P ${Sa_Password:-Swk5-rocks!} -C -Q 'SELECT 1' || exit 1"]
       interval: 3s
       retries: 10
-      start_period: 5s
+      start_period: 10s
       timeout: 3s
 
   init-db:
