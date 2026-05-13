@@ -1,21 +1,20 @@
 -- ============================================================
 -- fill-data.sql
--- Befüllt BiteTestDb mit Testdaten.
--- Entspricht DataFillerClass.cs (FillTestData)
--- Aufruf via sqlcmd (nach init-db.sql):
+-- Fills the BiteTestDb with sample data (restaurants, menu items, etc.)
+-- Called after init-db.sql to populate the database.
+-- Called via sqlcmd:
 --   sqlcmd -S db -U sa -P <password> -C -i fill-data.sql
 -- ============================================================
 
 USE BiteTestDb;
 GO
 
--- Abbruch wenn bereits Daten vorhanden (entspricht IsDatabaseFull)
+-- Check if the database is already filled (by checking if there are any restaurants)
 IF EXISTS (SELECT 1 FROM Restaurant)
 BEGIN
-    PRINT 'Datenbank bereits befüllt – Abbruch.';
-    RETURN;
+    PRINT 'Database already contains data. Skipping fill-data.sql.';
+    GOTO EndOfScript;
 END
-GO
 
 SET NOCOUNT ON;
 
@@ -38,7 +37,7 @@ DECLARE @catGetraenk INT = (SELECT id FROM MenuCategory WHERE name = 'Getränke'
 DECLARE @catSushi    INT = (SELECT id FROM MenuCategory WHERE name = 'Sushi');
 DECLARE @catDessert  INT = (SELECT id FROM MenuCategory WHERE name = 'Dessert');
 
-PRINT 'MenuCategories eingefügt.';
+PRINT 'Menu categories inserted.';
 
 -- ============================================================
 -- 2. Restaurant Nimmersatt
@@ -60,7 +59,7 @@ INSERT INTO Restaurant (name, menu_id, address_id, webhook_url, title_image_path
 VALUES ('Restaurant Nimmersatt', @menuNimmersatt, @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png');
 SET @restNimmersatt = SCOPE_IDENTITY();
 
--- Speisekarte
+-- Menu
 INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuNimmersatt, @catPizza,    'Margherita',               'Tomaten, Käse',                          9.50),
     (@menuNimmersatt, @catPizza,    'Al Tonno',                 'Tomaten, Käse, Thunfisch, Zwiebel, Oliven', 11.00),
@@ -75,7 +74,7 @@ INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuNimmersatt, @catDessert,  'Tiramisu',                 'Hausgemacht',                             5.50),
     (@menuNimmersatt, @catDessert,  'Panna Cotta',              'Mit Beerensauce',                         4.90);
 
--- Öffnungszeiten: Di-Fr 11-15 und 17-22 (day 2-5), Sa 11-14 (day 6), So 11-14 (day 0)
+-- Opening hours: Tuesday-Friday 11-15 and 17-22 (day 2-5), Saturday 11-14 (day 6), Sunday 11-14 (day 0) 
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
     (@restNimmersatt, 2, '11:00', '15:00'),
     (@restNimmersatt, 2, '17:00', '22:00'),
@@ -88,7 +87,7 @@ INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) 
     (@restNimmersatt, 6, '11:00', '14:00'),
     (@restNimmersatt, 0, '11:00', '14:00');
 
--- Lieferzonen
+-- Delivery zones and fees
 INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restNimmersatt, 20.00, 10.0);
 SET @zone1Nimmersatt = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone1Nimmersatt, 9999.00, 0.00);
@@ -99,7 +98,7 @@ INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VA
     (@zone2Nimmersatt, 30.00,   5.00),
     (@zone2Nimmersatt, 9999.00, 0.00);
 
-PRINT 'Restaurant Nimmersatt eingefügt.';
+PRINT 'Restaurant Nimmersatt inserted.';
 
 -- ============================================================
 -- 3. Restaurant Burger Bude Wien
@@ -121,6 +120,7 @@ INSERT INTO Restaurant (name, menu_id, address_id, webhook_url, title_image_path
 VALUES ('Burger Bude Wien', @menuBurger, @addrBurger, 'https://hooks.burgerbude.at/bite', 'img/burgerbude.png');
 SET @restBurger = SCOPE_IDENTITY();
 
+-- Menu
 INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuBurger, @catBurger,   'Classic Burger',  'Rindfleisch, Salat, Tomate, Gurke',  8.90),
     (@menuBurger, @catBurger,   'Cheese Burger',   'Rindfleisch, Cheddar, Zwiebeln',     9.50),
@@ -133,7 +133,7 @@ INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuBurger, @catGetraenk, 'Limo',            '0,4l, div. Sorten',                  2.80),
     (@menuBurger, @catGetraenk, 'Milchshake',      'Schoko, Vanille oder Erdbeere',      4.50);
 
--- Öffnungszeiten: So-Sa 11-23 (alle 7 Tage)
+-- Opening hours: Monday-Sunday 11-23 (day 0-6)
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
     (@restBurger, 0, '11:00', '23:00'),
     (@restBurger, 1, '11:00', '23:00'),
@@ -143,6 +143,7 @@ INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) 
     (@restBurger, 5, '11:00', '23:00'),
     (@restBurger, 6, '11:00', '23:00');
 
+-- Delivery zones and fees
 INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restBurger, 15.00, 5.0);
 SET @zone1Burger = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
@@ -153,7 +154,7 @@ INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (
 SET @zone2Burger = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone2Burger, 9999.00, 4.99);
 
-PRINT 'Restaurant Burger Bude Wien eingefügt.';
+PRINT 'Restaurant Burger Bude Wien inserted.';
 
 -- ============================================================
 -- 4. Restaurant Sakura Sushi
@@ -175,6 +176,7 @@ INSERT INTO Restaurant (name, menu_id, address_id, webhook_url, title_image_path
 VALUES ('Sakura Sushi', @menuSakura, @addrSakura, 'https://webhooks.sakura-sushi.at/orders', 'img/sakura.png');
 SET @restSakura = SCOPE_IDENTITY();
 
+-- Menu
 INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuSakura, @catSushi,    'Sake Nigiri (2 St.)',     'Lachs',                             4.80),
     (@menuSakura, @catSushi,    'Maguro Nigiri (2 St.)',   'Thunfisch',                         5.20),
@@ -191,7 +193,7 @@ INSERT INTO MenuItem (menu_id, category_id, name, description, price) VALUES
     (@menuSakura, @catDessert,  'Mochi Eis',               'Grüner Tee oder Mango',             4.50),
     (@menuSakura, @catDessert,  'Dorayaki',                'Japanischer Pancake mit Anko',      3.90);
 
--- Öffnungszeiten: Di-Sa 12-15 und 17:30-22:30 (day 2-6), So durchgehend 12-22 (day 0)
+-- Opening hours: Tuesday-Saturday 12-15 and 17:30-22:30 (day 2-6), Sunday 12-22 (day 0)
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
     (@restSakura, 2, '12:00', '15:00'),
     (@restSakura, 2, '17:30', '22:30'),
@@ -205,6 +207,7 @@ INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) 
     (@restSakura, 6, '17:30', '22:30'),
     (@restSakura, 0, '12:00', '22:00');
 
+-- Delivery zones and fees
 INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restSakura, 25.00, 8.0);
 SET @zone1Sakura = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
@@ -215,10 +218,10 @@ INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (
 SET @zone2Sakura = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone2Sakura, 9999.00, 5.90);
 
-PRINT 'Restaurant Sakura Sushi eingefügt.';
+PRINT 'Restaurant Sakura Sushi inserted.';
 
 -- ============================================================
--- 5. Generische Restaurants 4–20 (Bite Palace)
+-- 5. Generic Restaurants 4–20 (Bite Palace)
 -- ============================================================
 DECLARE @i       INT = 4;
 DECLARE @menuG   INT;
@@ -254,13 +257,13 @@ BEGIN
     );
     SET @restG = SCOPE_IDENTITY();
 
-    -- Einfache Speisekarte
+    -- Simple menu with 1 burger, 1 drink
     INSERT INTO MenuItem (menu_id, category_id, name, description, price)
     VALUES (@menuG, @catBurger, CONCAT('Burger Classic ', @i), 'Rindfleisch, Salat, Tomate', 8.90 + @i * 0.10);
     INSERT INTO MenuItem (menu_id, category_id, name, description, price)
     VALUES (@menuG, @catGetraenk, 'Cola', '0,5l', 2.50);
 
-    -- Öffnungszeiten Mo-Fr (day 1-5)
+    -- Opening hours: Monday-Friday 11-22 (day 1-5)
     SET @day = 1;
     WHILE @day <= 5
     BEGIN
@@ -269,16 +272,19 @@ BEGIN
         SET @day = @day + 1;
     END
 
-    -- Lieferzone
+    -- Delivery zone: 15€ min order, 10km max distance, 3.50€ fee under 30€, free above
     INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restG, 15.00, 10.0);
     SET @zoneG = SCOPE_IDENTITY();
     INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
         (@zoneG, 30.00,   3.50),
-        (@zoneG, 9999.00, 0.00);
+        (@zoneG, 9999.00, 0.00); -- Free delivery above 30€
 
     SET @i = @i + 1;
 END
+PRINT 'Generic Restaurants (Bite Palace 4-20) inserted.';
 
-PRINT 'Generische Restaurants (Bite Palace 4-20) eingefügt.';
-PRINT 'Testdaten erfolgreich befüllt.';
+PRINT 'Test data filled successfully.';
+
+EndOfScript:
+PRINT 'Script completed.';
 GO
