@@ -16,7 +16,7 @@ public class AdoTemplate(IConnectionFactory connectionFactory)
         {
             DbParameter param = command.CreateParameter();
             param.ParameterName = p.Name;
-            param.Value = p.Value;
+            param.Value = p.Value ?? DBNull.Value;
             command.Parameters.Add(param);
         }
     }
@@ -25,7 +25,7 @@ public class AdoTemplate(IConnectionFactory connectionFactory)
         RowMapper<T> rowMapper,
         params QueryParameter[] parameters)
     {
-        using DbConnection connection = connectionFactory.CreateConnection();
+        await using DbConnection connection = await connectionFactory.CreateConnectionAsync();
 
         using DbCommand command = connection.CreateCommand();
         command.CommandText = sql;
@@ -34,7 +34,7 @@ public class AdoTemplate(IConnectionFactory connectionFactory)
         await using DbDataReader reader = await command.ExecuteReaderAsync();
 
         IList<T> items = [];
-        while (reader.Read())
+        while (await reader.ReadAsync())
         {
             items.Add(rowMapper(reader));
         }
@@ -52,7 +52,7 @@ public class AdoTemplate(IConnectionFactory connectionFactory)
 
     public async Task<int> ExecuteAsync(string sql, params QueryParameter[] parameters)
     {
-        using DbConnection connection = connectionFactory.CreateConnection();
+        await using DbConnection connection = await connectionFactory.CreateConnectionAsync();
         using DbCommand command = connection.CreateCommand();
         command.CommandText = sql;
         AddParameters(command, parameters);

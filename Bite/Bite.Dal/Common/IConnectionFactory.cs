@@ -10,6 +10,6 @@ namespace Bite.Dal.Common
         public string ConnectionString { get; }
         public string ProviderName { get; }
 
-        DbConnection CreateConnection();
+        Task<DbConnection> CreateConnectionAsync();
     }
 }

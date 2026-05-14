@@ -1,4 +1,5 @@
 ﻿using Bite.Dal.Common;
+using Bite.Dal.Interface;
 using Bite.Domain;
 using Microsoft.Data.SqlClient;
 using System;
@@ -9,7 +10,7 @@ using System.Text;
 
 namespace Bite.Dal.Ado;
 
-public class RestaurantDao(IConnectionFactory connectionFactory)
+public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDao
 {
     private readonly AdoTemplate template = new AdoTemplate(connectionFactory);
 
@@ -20,8 +21,10 @@ public class RestaurantDao(IConnectionFactory connectionFactory)
             name: (string)row["name"],
             menuId: (int)row["menu_id"],
             addressId: (int)row["address_id"],
-            webhookUrl: (string)row["webhook_url"],
-            titleImagePath: (string)row["title_image_path"]);
+            webhookUrl: row["webhook_url"] as string,
+            titleImagePath: row["title_image_path"] as string,
+            createdAt: (DateTime)row["created_at"],
+            updatedAt: (DateTime)row["updated_at"]);
     }
 
     public async Task<IEnumerable<Restaurant>> FindAllAsync()
@@ -38,7 +41,7 @@ public class RestaurantDao(IConnectionFactory connectionFactory)
         );
     }
 
-    public async Task<int> InsertAsync(Restaurant restaurant)
+    public async Task<int?> InsertAsync(Restaurant restaurant)
     {
         return await template.QuerySingleAsync(
             """
@@ -60,7 +63,11 @@ public class RestaurantDao(IConnectionFactory connectionFactory)
     public async Task<bool> UpdateAsync(Restaurant restaurant)
     {
         return await template.ExecuteAsync(
-            $"update Restaurant set name=@name, menu_id=@menuId, address_id=@addressId, webhook_url=@webhook, title_image_path=@image where id=@id",
+            """
+            update Restaurant
+            set name=@name, menu_id=@menuId, address_id=@addressId, webhook_url=@webhook, title_image_path=@image
+            where id=@id
+            """,
             new QueryParameter("@name", restaurant.Name),
             new QueryParameter("@menuId", restaurant.MenuId),
             new QueryParameter("@addressId", restaurant.AddressId),

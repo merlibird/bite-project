@@ -30,7 +30,7 @@ public class DefaultConnectionFactory : IConnectionFactory
 
     public string ProviderName { get; }
 
-    public DbConnection CreateConnection()
+    public async Task<DbConnection> CreateConnectionAsync()
     {
         var connection = dbProviderFactory.CreateConnection();
         if (connection == null)
@@ -38,7 +38,7 @@ public class DefaultConnectionFactory : IConnectionFactory
             throw new InvalidOperationException("dbProviderFactory.CreateConnection() returns null");
         }
         connection.ConnectionString = this.ConnectionString;
-        connection.Open();
+        await connection.OpenAsync();
 
         return connection;
     }
