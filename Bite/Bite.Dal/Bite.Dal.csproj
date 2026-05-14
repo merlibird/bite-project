@@ -21,8 +21,4 @@
     <Folder Include="Interface\" />
   </ItemGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="..\Bite.Tests\TestData\testing-db-tsql.sql" />
-	</ItemGroup>
-
 </Project>
