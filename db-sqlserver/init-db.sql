@@ -26,16 +26,10 @@ DROP TABLE IF EXISTS MenuCategory;
 DROP TABLE IF EXISTS OpeningHourSlot;
 DROP TABLE IF EXISTS Restaurant;
 DROP TABLE IF EXISTS Address;
-DROP TABLE IF EXISTS Menu;
 PRINT 'Existing tables dropped (if any).';
 GO
 
 -- 3. Create tables
-CREATE TABLE Menu (
-    id INT IDENTITY(1,1),
-    CONSTRAINT PK_Menu PRIMARY KEY (id)
-);
-PRINT 'Table "Menu" created.';
 
 CREATE TABLE Address (
     id              INT IDENTITY(1,1),
@@ -61,21 +55,19 @@ PRINT 'Table "MenuCategory" created.';
 CREATE TABLE Restaurant (
     id               INT IDENTITY(1,1),
     name             NVARCHAR(100) NOT NULL,
-    menu_id          INT NOT NULL,
     address_id       INT NOT NULL,
     webhook_url      NVARCHAR(255),
     title_image_path NVARCHAR(255),
     created_at       DATETIME DEFAULT GETDATE(),
     updated_at       DATETIME DEFAULT GETDATE(),
     CONSTRAINT PK_Restaurant PRIMARY KEY (id),
-    CONSTRAINT FK_Restaurant_Menu FOREIGN KEY (menu_id) REFERENCES Menu(id),
     CONSTRAINT FK_Restaurant_Address FOREIGN KEY (address_id) REFERENCES Address(id)
 );
 PRINT 'Table "Restaurant" created.';
 
 CREATE TABLE MenuItem (
     id          INT IDENTITY(1,1),
-    menu_id     INT            NOT NULL,
+    restaurant_id INT          NOT NULL,
     category_id INT            NOT NULL,
     name        NVARCHAR(100)  NOT NULL,
     description NVARCHAR(255),
@@ -84,7 +76,7 @@ CREATE TABLE MenuItem (
     created_at  DATETIME       DEFAULT GETDATE(),
     updated_at  DATETIME       DEFAULT GETDATE(),
     CONSTRAINT PK_MenuItem PRIMARY KEY (id),
-    CONSTRAINT FK_MenuItem_Menu FOREIGN KEY (menu_id) REFERENCES Menu(id),
+    CONSTRAINT FK_MenuItem_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id),
     CONSTRAINT FK_MenuItem_Category FOREIGN KEY (category_id) REFERENCES MenuCategory(id)
 );
 PRINT 'Table "MenuItem" created.';
