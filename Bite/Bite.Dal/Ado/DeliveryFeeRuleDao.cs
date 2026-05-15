@@ -1,85 +1,87 @@
 ﻿using Bite.Dal.Common;
+using Bite.Dal.Interface;
 using Bite.Domain;
 using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
-namespace Bite.Dal.Ado
+namespace Bite.Dal.Ado;
+
+public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliveryFeeRuleDao
 {
-    public class DeliveryFeeRuleDao
+    private readonly AdoTemplate template = new AdoTemplate(connectionFactory);
+
+    private DeliveryFeeRule MapRowToDeliveryFeeRule(IDataRecord row)
     {
-        private readonly string connectionString;
+        return new DeliveryFeeRule(
+            id: (int)row["id"],
+            deliveryZoneId: (int)row["delivery_zone_id"],
+            maxOrderValue: (decimal)row["max_order_value"],
+            deliveryFee: (decimal)row["delivery_fee"]);
+    }
 
-        public DeliveryFeeRuleDao(DatabaseConfig config)
-        {
-            connectionString = config.TargetConnectionString;
-        }
+    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAsync(int restaurantId)
+    {
+        return await template.QueryAsync(
+            """
+            select dfr.* from DeliveryFeeRule dfr
+            join DeliveryZone dz on dz.id = dfr.delivery_zone_id
+            where dz.restaurant_id=@restaurantId
+            """,
+            MapRowToDeliveryFeeRule,
+            new QueryParameter("@restaurantId", restaurantId));
+    }
 
-        public async Task<IEnumerable<DeliveryFeeRule>> FindByZoneIdAsync(int zoneId)
-        {
-            const string sql = @"
-            SELECT id, delivery_zone_id, max_order_value, delivery_fee
-            FROM DeliveryFeeRule
-            WHERE delivery_zone_id = @zoneId
-            ORDER BY max_order_value";
+    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAndZoneIdAsync(int restaurantId, int zoneId)
+    {
+        return await template.QueryAsync(
+            """
+            select dfr.* from DeliveryFeeRule dfr
+            join DeliveryZone dz on dz.id = dfr.delivery_zone_id
+            where dz.restaurant_id=@restaurantId and dfr.delivery_zone_id=@zoneId
+            """,
+            MapRowToDeliveryFeeRule,
+            new QueryParameter("@restaurantId", restaurantId),
+            new QueryParameter("@zoneId", zoneId));
+    }
 
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+    public async Task<int?> InsertAsync(DeliveryFeeRule deliveryFeeRule)
+    {
+        return await template.QuerySingleAsync(
+            """
+            insert into DeliveryFeeRule
+            (delivery_zone_id, max_order_value, delivery_fee)
+            output inserted.id
+            values
+            (@deliveryZoneId, @maxOrderValue, @deliveryFee)
+            """,
+            row => (int)row[0],
+            new QueryParameter("@deliveryZoneId", deliveryFeeRule.DeliveryZoneId),
+            new QueryParameter("@maxOrderValue", deliveryFeeRule.MaxOrderValue),
+            new QueryParameter("@deliveryFee", deliveryFeeRule.DeliveryFee));
+    }
 
-            await using var cmd = new SqlCommand(sql, connection);
-            cmd.Parameters.AddWithValue("@zoneId", zoneId);
+    public async Task<bool> UpdateAsync(DeliveryFeeRule deliveryFeeRule)
+    {
+        return await template.ExecuteAsync(
+            """
+            update DeliveryFeeRule
+            set max_order_value=@maxOrderValue, delivery_fee=@deliveryFee
+            where id=@id
+            """,
+            new QueryParameter("@maxOrderValue", deliveryFeeRule.MaxOrderValue),
+            new QueryParameter("@deliveryFee", deliveryFeeRule.DeliveryFee),
+            new QueryParameter("@id", deliveryFeeRule.Id)
+        ) == 1;
+    }
 
-            await using var reader = await cmd.ExecuteReaderAsync();
-
-            var result = new List<DeliveryFeeRule>();
-            while (reader.Read())
-                result.Add(MapRule(reader));
-
-            return result;
-        }
-
-        public async Task<int> InsertAsync(DeliveryFeeRule rule)
-        {
-            const string sql = @"
-            INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee)
-            OUTPUT INSERTED.id
-            VALUES (@zoneId, @maxOrder, @fee)";
-
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
-
-            await using var cmd = new SqlCommand(sql, connection);
-            cmd.Parameters.AddWithValue("@zoneId", rule.DeliveryZoneId);
-            cmd.Parameters.AddWithValue("@maxOrder", rule.MaxOrderValue);
-            cmd.Parameters.AddWithValue("@fee", rule.DeliveryFee);
-
-            var result = await cmd.ExecuteScalarAsync();
-            return Convert.ToInt32(result);
-        }
-
-        
-        // Löscht alle Regeln einer Zone – wird z.B. beim Ersetzen der
-        // Lieferbedingungen (Anforderung 3) benötigt
-        public async Task<bool> DeleteByZoneIdAsync(int zoneId)
-        {
-            const string sql = "DELETE FROM DeliveryFeeRule WHERE delivery_zone_id = @zoneId";
-
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
-
-            await using var cmd = new SqlCommand(sql, connection);
-            cmd.Parameters.AddWithValue("@zoneId", zoneId);
-
-            return await cmd.ExecuteNonQueryAsync() > 0;
-        }
-
-        private static DeliveryFeeRule MapRule(SqlDataReader r) => new()
-        {
-            Id = r.GetInt32(0),
-            DeliveryZoneId = r.GetInt32(1),
-            MaxOrderValue = r.GetDecimal(2),
-            DeliveryFee = r.GetDecimal(3),
-        };
+    public async Task<bool> DeleteAsync(int id)
+    {
+        return await template.ExecuteAsync(
+            "delete from DeliveryFeeRule where id=@id",
+            new QueryParameter("@id", id)
+        ) == 1;
     }
 }

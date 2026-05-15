@@ -19,7 +19,6 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
         return new Restaurant(
             id: (int)row["id"],
             name: (string)row["name"],
-            menuId: (int)row["menu_id"],
             addressId: (int)row["address_id"],
             webhookUrl: row["webhook_url"] as string,
             titleImagePath: row["title_image_path"] as string,
@@ -53,7 +52,6 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             """,
             row => (int)row[0],
             new QueryParameter("@name", restaurant.Name),
-            new QueryParameter("@menuId", restaurant.MenuId),
             new QueryParameter("@addressId", restaurant.AddressId),
             new QueryParameter("@webhook", restaurant.WebhookUrl),
             new QueryParameter("@image", restaurant.TitleImagePath)
@@ -69,11 +67,18 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             where id=@id
             """,
             new QueryParameter("@name", restaurant.Name),
-            new QueryParameter("@menuId", restaurant.MenuId),
             new QueryParameter("@addressId", restaurant.AddressId),
             new QueryParameter("@webhook", restaurant.WebhookUrl),
             new QueryParameter("@image", restaurant.TitleImagePath),
             new QueryParameter("@id", restaurant.Id)
+        ) == 1;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        return await template.ExecuteAsync(
+            "delete from Restaurant where id=@id",
+            new QueryParameter("@id", id)
         ) == 1;
     }
 

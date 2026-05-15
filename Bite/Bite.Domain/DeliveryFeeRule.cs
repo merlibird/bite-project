@@ -4,11 +4,20 @@ using System.Text;
 
 namespace Bite.Domain
 {
-    public class DeliveryFeeRule
+    public class DeliveryFeeRule(
+        int id,
+        int deliveryZoneId,
+        decimal maxOrderValue,
+        decimal deliveryFee)
     {
-        public int Id { get; set; }
-        public int DeliveryZoneId { get; set; }
-        public decimal MaxOrderValue { get; set; }
-        public decimal DeliveryFee { get; set; }
+        public int Id { get; init; } = id;
+        public int DeliveryZoneId { get; init; } = deliveryZoneId;
+        public decimal MaxOrderValue { get; set; } = maxOrderValue;
+        public decimal DeliveryFee { get; set; } = deliveryFee;
+
+        public override string ToString()
+        {
+            return $"DeliveryFeeRule {Id}: DeliveryZoneId: {DeliveryZoneId}, MaxOrderValue: {MaxOrderValue}, DeliveryFee: {DeliveryFee}";
+        }
     }
 }

@@ -14,4 +14,6 @@ public interface IRestaurantDao
     Task<int?> InsertAsync(Restaurant restaurant);
 
     Task<bool> UpdateAsync(Restaurant restaurant);
+
+    Task<bool> DeleteAsync(int id);
 }
