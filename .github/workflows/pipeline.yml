@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build & Test
+    name: Build & Test Bite
     runs-on: ubuntu-latest
 
     steps:
@@ -37,12 +37,13 @@ jobs:
         working-directory: ./Bite
         run: dotnet restore
 
-      # - name: Build
-      #   run: dotnet build --no-restore --configuration Release
+      - name: Build
+        working-directory: ./Bite
+        run: dotnet build --no-restore --configuration Release
 
       - name: Test
         working-directory: ./Bite/Bite.Tests
-        run: dotnet test --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration Release --verbosity normal
         env:
           ConnectionStrings__BiteDbConnection: "Data Source=localhost;Initial Catalog=BiteTestDb;User ID=sa;Password=${{ secrets.SA_PASSWORD }};Trust Server Certificate=True"
       
