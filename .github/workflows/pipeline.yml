@@ -22,7 +22,9 @@ jobs:
       
       - name: Initialize database
         working-directory: ./db-sqlserver
-        run: docker compose up init-db --wait
+        run: |
+          docker compose up init-db
+          docker compose logs init-db
         env:
           Sa_Password: ${{ secrets.SA_PASSWORD }}
 
@@ -43,8 +45,9 @@ jobs:
           ConnectionStrings__BiteDbConnection: "Data Source=localhost;Initial Catalog=BiteTestDb;User ID=sa;Password=${{ secrets.SA_PASSWORD }};Trust Server Certificate=True"
       
       - name: Teardown database
+        working-directory: ./db-sqlserver
         if: always()
-        run: docker compose -f ./db-sqlserver/docker-compose.yml down
+        run: docker compose down
 
       # - name: Publish app
       #   run: dotnet publish -c Release -o publish
