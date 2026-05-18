@@ -17,12 +17,4 @@
 		<ProjectReference Include="..\Bite.Domain\Bite.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interface\" />
-  </ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="..\Bite.Tests\TestData\testing-db-tsql.sql" />
-	</ItemGroup>
-
 </Project>
