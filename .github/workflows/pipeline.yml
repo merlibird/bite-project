@@ -34,7 +34,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./Bite.slnx
+        run: dotnet restore ./Bite/Bite.slnx
 
       # - name: Build
       #   run: dotnet build --no-restore --configuration Release
