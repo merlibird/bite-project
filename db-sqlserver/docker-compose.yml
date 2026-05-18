@@ -32,6 +32,7 @@ services:
 
   fill-data:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: ["local"]
     environment:
       - SA_PASSWORD=${Sa_Password:-Swk5-rocks!}
     depends_on:
