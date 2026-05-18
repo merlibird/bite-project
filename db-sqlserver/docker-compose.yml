@@ -18,6 +18,7 @@ services:
 
   init-db:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: "no"
     environment:
       - SA_PASSWORD=${Sa_Password:-Swk5-rocks!}
     depends_on:
