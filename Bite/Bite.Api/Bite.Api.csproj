@@ -14,8 +14,4 @@
     <Folder Include="Controllers\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="Bite.ConsoleTester.csproj" />
-  </ItemGroup>
-
 </Project>
