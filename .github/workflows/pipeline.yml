@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start database
-        run: docker compose -f ./db-sqlserver/test-db/docker-compose.yml up --wait
+        run: docker compose -f ./db-sqlserver/docker-compose.yml up --wait
         env:
           Sa_Password: ${{ secrets.SA_PASSWORD }}
 
