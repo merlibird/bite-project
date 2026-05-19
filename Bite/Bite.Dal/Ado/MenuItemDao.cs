@@ -1,11 +1,8 @@
-﻿using Bite.Dal.Common;
+using Bite.Dal.Common;
 using Bite.Dal.Interface;
 using Bite.Domain;
-using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
+using System.Linq;
 
 namespace Bite.Dal.Ado;
 
@@ -13,50 +10,152 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 {
     private readonly AdoTemplate template = new AdoTemplate(connectionFactory);
 
+    private static readonly string MenuItemSelect =
+        """
+        select
+            mi.id,
+            mi.restaurant_id,
+            mi.name,
+            mi.description,
+            mi.price,
+            mi.is_active,
+            mi.created_at,
+            mi.updated_at,
+            STRING_AGG(CONVERT(nvarchar(20), mimc.menu_category_id), ',') as menu_category_ids
+        from MenuItem mi
+        left join MenuItemMenuCategory mimc on mimc.menu_item_id = mi.id
+        """;
+
+    private static readonly string MenuItemGroupBy =
+        """
+        group by
+            mi.id,
+            mi.restaurant_id,
+            mi.name,
+            mi.description,
+            mi.price,
+            mi.is_active,
+            mi.created_at,
+            mi.updated_at
+        """;
+
+    private static IReadOnlyCollection<int> MapMenuCategoryIds(IDataRecord row)
+    {
+        if (row["menu_category_ids"] is not string categoryIds)
+        {
+            return [];
+        }
+
+        return categoryIds
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(int.Parse)
+            .ToArray();
+    }
+
     private MenuItem MapRowToMenuItem(IDataRecord row)
     {
         return new MenuItem(
             id: (int)row["id"],
             restaurantId: (int)row["restaurant_id"],
-            categoryId: (int)row["category_id"],
             name: (string)row["name"],
             description: row["description"] as string,
             price: (decimal)row["price"],
             isActive: (bool)row["is_active"],
             createdAt: (DateTime)row["created_at"],
-            updatedAt: (DateTime)row["updated_at"]);
+            updatedAt: (DateTime)row["updated_at"],
+            menuCategoryIds: MapMenuCategoryIds(row));
     }
+
+    private static object NullableParam(object? value) => value ?? DBNull.Value;
 
     public async Task<IEnumerable<MenuItem>> FindAllAsync()
     {
-        return await template.QueryAsync("select * from MenuItem", MapRowToMenuItem);
+        return await template.QueryAsync(
+            $"""
+            {MenuItemSelect}
+            {MenuItemGroupBy}
+            """,
+            MapRowToMenuItem);
     }
 
     public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId)
     {
         return await template.QueryAsync(
-            "select * from MenuItem where restaurant_id=@restaurantId",
+            $"""
+            {MenuItemSelect}
+            where mi.restaurant_id = @restaurantId
+            {MenuItemGroupBy}
+            """,
             MapRowToMenuItem,
             new QueryParameter("@restaurantId", restaurantId));
     }
 
+    public async Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId)
+    {
+        return await template.QueryAsync(
+            $"""
+            {MenuItemSelect}
+            where exists (
+                select 1
+                from MenuItemMenuCategory mimcFilter
+                where mimcFilter.menu_item_id = mi.id
+                    and mimcFilter.menu_category_id = @menuCategoryId
+            )
+            {MenuItemGroupBy}
+            """,
+            MapRowToMenuItem,
+            new QueryParameter("@menuCategoryId", menuCategoryId));
+    }
+
     public async Task<int?> InsertAsync(MenuItem menuItem)
     {
+        string categoryIds = string.Join(",", menuItem.MenuCategoryIds.Distinct());
+
         return await template.QuerySingleAsync(
             """
-            insert into MenuItem
-            (restaurant_id, category_id, name, description, price, is_active)
-            output inserted.id
-            values
-            (@restaurantId, @categoryId, @name, @description, @price, @isActive)
+            declare @insertedMenuItems table (id int);
+            declare @menuItemId int;
+
+            begin try
+                begin transaction;
+
+                insert into MenuItem
+                (restaurant_id, name, description, price, is_active)
+                output inserted.id into @insertedMenuItems
+                values
+                (@restaurantId, @name, @description, @price, @isActive);
+
+                select @menuItemId = id
+                from @insertedMenuItems;
+
+                if @categoryIds <> ''
+                begin
+                    insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
+                    select
+                        @menuItemId,
+                        convert(int, value),
+                        @restaurantId
+                    from string_split(@categoryIds, ',');
+                end;
+
+                commit transaction;
+            end try
+            begin catch
+                if @@trancount > 0
+                    rollback transaction;
+
+                throw;
+            end catch;
+
+            select @menuItemId;
             """,
             row => (int)row[0],
             new QueryParameter("@restaurantId", menuItem.RestaurantId),
-            new QueryParameter("@categoryId", menuItem.CategoryId),
             new QueryParameter("@name", menuItem.Name),
-            new QueryParameter("@description", menuItem.Description),
+            new QueryParameter("@description", NullableParam(menuItem.Description)),
             new QueryParameter("@price", menuItem.Price),
-            new QueryParameter("@isActive", menuItem.IsActive));
+            new QueryParameter("@isActive", menuItem.IsActive),
+            new QueryParameter("@categoryIds", categoryIds));
     }
 
     public async Task<bool> UpdateAsync(MenuItem menuItem)
@@ -64,14 +163,66 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
         return await template.ExecuteAsync(
             """
             update MenuItem
-            set category_id=@categoryId, name=@name, description=@description, is_active=@isActive
-            where id=@id
+            set name = @name,
+                description = @description,
+                price = @price,
+                is_active = @isActive
+            where id = @id
             """,
-            new QueryParameter("@categoryId", menuItem.CategoryId),
             new QueryParameter("@name", menuItem.Name),
-            new QueryParameter("@description", menuItem.Description),
+            new QueryParameter("@description", NullableParam(menuItem.Description)),
+            new QueryParameter("@price", menuItem.Price),
             new QueryParameter("@isActive", menuItem.IsActive),
             new QueryParameter("@id", menuItem.Id)
         ) == 1;
+    }
+
+    public async Task<bool> SetMenuCategoriesAsync(int menuItemId, IEnumerable<int> menuCategoryIds)
+    {
+        var distinctIds = menuCategoryIds.Distinct().ToList();
+        string categoryIds = string.Join(",", distinctIds);
+        int expectedCount = distinctIds.Count;
+
+        int? assignedCount = await template.QuerySingleAsync(
+            """
+            declare @assignedCount int = 0;
+
+            begin try
+                begin transaction;
+
+                delete from MenuItemMenuCategory
+                where menu_item_id = @menuItemId;
+
+                if @categoryIds <> ''
+                begin
+                    insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
+                    select
+                        @menuItemId,
+                        convert(int, s.value),
+                        mi.restaurant_id
+                    from string_split(@categoryIds, ',') s
+                    join MenuItem mi on mi.id = @menuItemId;
+                end;
+
+                select @assignedCount = count(*)
+                from MenuItemMenuCategory
+                where menu_item_id = @menuItemId;
+
+                commit transaction;
+            end try
+            begin catch
+                if @@trancount > 0
+                    rollback transaction;
+
+                throw;
+            end catch;
+
+            select @assignedCount;
+            """,
+            row => (int)row[0],
+            new QueryParameter("@menuItemId", menuItemId),
+            new QueryParameter("@categoryIds", categoryIds));
+
+        return assignedCount == expectedCount;
     }
 }

@@ -17,12 +17,21 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
     {
         return new MenuCategory(
             id: (int)row["id"],
+            restaurantId: (int)row["restaurant_id"],
             name: (string)row["name"]);
     }
 
     public async Task<IEnumerable<MenuCategory>> FindAllAsync()
     {
         return await template.QueryAsync("select * from MenuCategory", MapRowToMenuCategory);
+    }
+
+    public async Task<IEnumerable<MenuCategory>> FindAllByRestaurantIdAsync(int restaurantId)
+    {
+        return await template.QueryAsync(
+            "select * from MenuCategory where restaurant_id=@restaurantId",
+            MapRowToMenuCategory,
+            new QueryParameter("@restaurantId", restaurantId));
     }
 
     public async Task<MenuCategory?> FindByIdAsync(int id)
@@ -38,12 +47,13 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return await template.QuerySingleAsync(
             """
             insert into MenuCategory
-            (name)
+            (restaurant_id, name)
             output inserted.id
             values
-            (@name)
+            (@restaurantId, @name)
             """,
             row => (int)row[0],
+            new QueryParameter("@restaurantId", menuCategory.RestaurantId),
             new QueryParameter("@name", menuCategory.Name));
     }
 
@@ -52,9 +62,10 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return await template.ExecuteAsync(
             """
             update MenuCategory
-            set name=@name
+            set restaurant_id=@restaurantId, name=@name
             where id=@id
             """,
+            new QueryParameter("@restaurantId", menuCategory.RestaurantId),
             new QueryParameter("@name", menuCategory.Name),
             new QueryParameter("@id", menuCategory.Id)
         ) == 1;

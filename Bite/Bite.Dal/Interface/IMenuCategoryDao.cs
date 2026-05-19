@@ -9,6 +9,8 @@ public interface IMenuCategoryDao
 {
     Task<IEnumerable<MenuCategory>> FindAllAsync();
 
+    Task<IEnumerable<MenuCategory>> FindAllByRestaurantIdAsync(int restaurantId);
+
     Task<MenuCategory?> FindByIdAsync(int id);
 
     Task<int?> InsertAsync(MenuCategory menuCategory);
