@@ -6,14 +6,16 @@ namespace Bite.Domain
 {
     public class MenuCategory(
         int id,
+        int restaurantId,
         string name)
     {
         public int Id { get; init; } = id;
+        public int RestaurantId { get; init; } = restaurantId;
         public string Name { get; set; } = name;
 
         public override string ToString()
         {
-            return $"MenuCategory {Id}: {Name}";
+            return $"MenuCategory {Id}: {Name} (RestaurantId: {RestaurantId})";
         }
     }
 }
