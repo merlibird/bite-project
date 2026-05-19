@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Common;
 
@@ -30,7 +31,7 @@ public class DefaultConnectionFactory : IConnectionFactory
 
     public string ProviderName { get; }
 
-    public async Task<DbConnection> CreateConnectionAsync()
+    public async Task<DbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default)
     {
         var connection = dbProviderFactory.CreateConnection();
         if (connection == null)
@@ -38,7 +39,7 @@ public class DefaultConnectionFactory : IConnectionFactory
             throw new InvalidOperationException("dbProviderFactory.CreateConnection() returns null");
         }
         connection.ConnectionString = this.ConnectionString;
-        await connection.OpenAsync();
+        await connection.OpenAsync(cancellationToken);
 
         return connection;
     }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Common
 {
@@ -10,6 +11,6 @@ namespace Bite.Dal.Common
         public string ConnectionString { get; }
         public string ProviderName { get; }
 
-        Task<DbConnection> CreateConnectionAsync();
+        Task<DbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default);
     }
 }

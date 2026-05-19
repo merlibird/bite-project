@@ -1,14 +1,16 @@
 ﻿using Bite.Domain;
 
+using System.Threading;
+
 namespace Bite.Dal.Interface;
 
 public interface IMenuItemDao
 {
-    Task<IEnumerable<MenuItem>> FindAllAsync();
+    Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId);
+    Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 
-    Task<int?> InsertAsync(MenuItem menuItem);
+    Task<int?> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
 
-    Task<bool> UpdateAsync(MenuItem menuItem);
+    Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
 }

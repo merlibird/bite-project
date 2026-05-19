@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Ado;
 
@@ -22,7 +23,7 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             deliveryFee: (decimal)row["delivery_fee"]);
     }
 
-    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAsync(int restaurantId)
+    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             """
@@ -31,10 +32,11 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             where dz.restaurant_id=@restaurantId
             """,
             MapRowToDeliveryFeeRule,
-            new QueryParameter("@restaurantId", restaurantId));
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
     }
 
-    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAndZoneIdAsync(int restaurantId, int zoneId)
+    public async Task<IEnumerable<DeliveryFeeRule>> FindByRestaurantIdAndZoneIdAsync(int restaurantId, int zoneId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             """
@@ -43,11 +45,14 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             where dz.restaurant_id=@restaurantId and dfr.delivery_zone_id=@zoneId
             """,
             MapRowToDeliveryFeeRule,
+            [
             new QueryParameter("@restaurantId", restaurantId),
-            new QueryParameter("@zoneId", zoneId));
+            new QueryParameter("@zoneId", zoneId)
+            ],
+            cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(DeliveryFeeRule deliveryFeeRule)
+    public async Task<int?> InsertAsync(DeliveryFeeRule deliveryFeeRule, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -58,12 +63,15 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             (@deliveryZoneId, @maxOrderValue, @deliveryFee)
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@deliveryZoneId", deliveryFeeRule.DeliveryZoneId),
             new QueryParameter("@maxOrderValue", deliveryFeeRule.MaxOrderValue),
-            new QueryParameter("@deliveryFee", deliveryFeeRule.DeliveryFee));
+            new QueryParameter("@deliveryFee", deliveryFeeRule.DeliveryFee)
+            ],
+            cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(DeliveryFeeRule deliveryFeeRule)
+    public async Task<bool> UpdateAsync(DeliveryFeeRule deliveryFeeRule, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -71,17 +79,23 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             set max_order_value=@maxOrderValue, delivery_fee=@deliveryFee
             where id=@id
             """,
+            [
             new QueryParameter("@maxOrderValue", deliveryFeeRule.MaxOrderValue),
             new QueryParameter("@deliveryFee", deliveryFeeRule.DeliveryFee),
             new QueryParameter("@id", deliveryFeeRule.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             "delete from DeliveryFeeRule where id=@id",
+            [
             new QueryParameter("@id", id)
+            ],
+            cancellationToken
         ) == 1;
     }
 }
