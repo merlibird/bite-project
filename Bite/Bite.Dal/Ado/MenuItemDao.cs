@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Ado;
 
@@ -27,20 +28,21 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             updatedAt: (DateTime)row["updated_at"]);
     }
 
-    public async Task<IEnumerable<MenuItem>> FindAllAsync()
+    public async Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default)
     {
-        return await template.QueryAsync("select * from MenuItem", MapRowToMenuItem);
+        return await template.QueryAsync("select * from MenuItem", MapRowToMenuItem, [], cancellationToken);
     }
 
-    public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId)
+    public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             "select * from MenuItem where restaurant_id=@restaurantId",
             MapRowToMenuItem,
-            new QueryParameter("@restaurantId", restaurantId));
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(MenuItem menuItem)
+    public async Task<int?> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -51,15 +53,18 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             (@restaurantId, @categoryId, @name, @description, @price, @isActive)
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@restaurantId", menuItem.RestaurantId),
             new QueryParameter("@categoryId", menuItem.CategoryId),
             new QueryParameter("@name", menuItem.Name),
             new QueryParameter("@description", menuItem.Description),
             new QueryParameter("@price", menuItem.Price),
-            new QueryParameter("@isActive", menuItem.IsActive));
+            new QueryParameter("@isActive", menuItem.IsActive)
+            ],
+            cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(MenuItem menuItem)
+    public async Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -67,11 +72,14 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             set category_id=@categoryId, name=@name, description=@description, is_active=@isActive
             where id=@id
             """,
+            [
             new QueryParameter("@categoryId", menuItem.CategoryId),
             new QueryParameter("@name", menuItem.Name),
             new QueryParameter("@description", menuItem.Description),
             new QueryParameter("@isActive", menuItem.IsActive),
             new QueryParameter("@id", menuItem.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 }
