@@ -1,5 +1,6 @@
 ﻿using Bite.Dal.Ado;
 using Bite.Dal.Common;
+using Bite.Domain;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,16 @@ public class RestaurantDaoTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
         template = new AdoTemplate(fixture.ConnectionFactory);
     }
 
-    public async Task InitializeAsync() // beforeEach --> clear the Restaurant table
-        => await template.ExecuteAsync("delete from Restaurant");
+    // beforeEach --> clear the Restaurant table
+    public async Task InitializeAsync()
+        => await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
 
-    public Task DisposeAsync() => Task.CompletedTask; // afterEach --> do nothing
+    // afterEach --> do nothing
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    // -------------------------------------------------------------------------
+    // FindAllAsync
+    // -------------------------------------------------------------------------
 
     [Fact]
     public async Task FindAllAsync_EmptyTable_ReturnsEmptyList() 
@@ -29,4 +36,26 @@ public class RestaurantDaoTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
         var result = await dao.FindAllAsync();
         Assert.Empty(result);
     }
+
+    [Fact]
+    public async Task FindAllAsync_TwoRestaurantsInserted_ReturnsBoth()
+    {
+        await dao.InsertAsync(MakeRestaurant("Zum Wirt"));
+        await dao.InsertAsync(MakeRestaurant("Zum Goldenen Hirschen"));
+
+        var result = await dao.FindAllAsync();
+
+        Assert.Equal(2, result.Count());
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private static Restaurant MakeRestaurant(
+        string name,
+        int addressId = 1,
+        string? webhookUrl = null,
+        string? titleImagePath = null) =>
+            new Restaurant(0, name, addressId, webhookUrl, titleImagePath);
 }

@@ -12,11 +12,13 @@ public class DatabaseFixture : IAsyncLifetime
 {
     public IConnectionFactory ConnectionFactory { get; private set; } = null!;
 
-    public async Task InitializeAsync() // beforeAll --> initialize database connection
+    // beforeAll --> initialize database connection
+    public async Task InitializeAsync() 
     {
         var configuration = ConfigurationUtil.GetConfiguration();
         ConnectionFactory = DefaultConnectionFactory.FromConfiguration(configuration, "BiteDbConnection", "ProviderName");
     }
 
-    public Task DisposeAsync() => Task.CompletedTask; // afterAll --> do nothing
+    // afterAll --> do nothing
+    public Task DisposeAsync() => Task.CompletedTask; 
 }

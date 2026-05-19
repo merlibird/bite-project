@@ -24,9 +24,9 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             zipCode: (string)row["zip_code"],
             city: (string)row["city"],
             country: (string)row["country"],
-            additionalInfo: row["additional_info"] as string,
             longitude: (double)row["longitude"],
-            latitude: (double)row["latitude"]);
+            latitude: (double)row["latitude"],
+            additionalInfo: row["additional_info"] as string);
     }
 
     public async Task<Address?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -38,7 +38,7 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(Address address, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(Address address, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -50,14 +50,14 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             """,
             row => (int)row[0],
             [
-            new QueryParameter("@street", address.Street),
-            new QueryParameter("@number", address.Number),
-            new QueryParameter("@zipCode", address.ZipCode),
-            new QueryParameter("@city", address.City),
-            new QueryParameter("@country", address.Country),
-            new QueryParameter("@additionalInfo", address.AdditionalInfo),
-            new QueryParameter("@longitude", address.Longitude),
-            new QueryParameter("@latitude", address.Latitude)
+                new QueryParameter("@street", address.Street),
+                new QueryParameter("@number", address.Number),
+                new QueryParameter("@zipCode", address.ZipCode),
+                new QueryParameter("@city", address.City),
+                new QueryParameter("@country", address.Country),
+                new QueryParameter("@longitude", address.Longitude),
+                new QueryParameter("@latitude", address.Latitude),
+                new QueryParameter("@additionalInfo", address.AdditionalInfo)
             ],
             cancellationToken);
     }

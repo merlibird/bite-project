@@ -12,8 +12,8 @@ namespace Bite.Domain
         string? description,
         decimal price,
         bool isActive,
-        DateTime createdAt,
-        DateTime updatedAt)
+        DateTime? createdAt = null,
+        DateTime? updatedAt = null)
     {
         public int Id { get; init; } = id;
         public int RestaurantId { get; init; } = restaurantId;
@@ -22,12 +22,12 @@ namespace Bite.Domain
         public string? Description { get; set; } = description;
         public decimal Price { get; init; } = price;
         public bool IsActive { get; set; } = isActive;
-        public DateTime CreatedAt { get; init; } = createdAt;
-        public DateTime UpdatedAt { get; init; } = updatedAt;
+        public DateTime? CreatedAt { get; init; } = createdAt;
+        public DateTime? UpdatedAt { get; init; } = updatedAt;
 
         public override string ToString()
         {
-            return $"MenuItem {Id}: {Name} (RestaurantId: {RestaurantId}, CategoryId: {CategoryId}), Price: {Price}, IsActive: {isActive}, CreatedAt: {CreatedAt}, UpdatedAt: {UpdatedAt}";
+            return $"MenuItem {Id}: {Name} (RestaurantId: {RestaurantId}, CategoryId: {CategoryId}), Price: {Price}, IsActive: {IsActive}, CreatedAt: {CreatedAt}, UpdatedAt: {UpdatedAt}";
         }
     }
 }
