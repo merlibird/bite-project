@@ -2,16 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Interface;
 
 public interface IDeliveryZoneDao
 {
-    Task<IEnumerable<DeliveryZone>> FindByRestaurantIdAsync(int restaurantId);
+    Task<IEnumerable<DeliveryZone>> FindByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 
-    Task<int?> InsertAsync(DeliveryZone deliveryZone);
+    Task<int?> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
 
-    Task<bool> UpdateAsync(DeliveryZone deliveryZone);
+    Task<bool> UpdateAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
 
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

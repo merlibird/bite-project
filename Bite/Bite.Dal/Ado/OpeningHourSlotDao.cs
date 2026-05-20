@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Ado;
 
@@ -23,15 +24,16 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             closeTime: (TimeSpan)row["close_time"]);
     }
 
-    public async Task<IEnumerable<OpeningHourSlot>> FindByRestaurantIdAsync(int restaurantId)
+    public async Task<IEnumerable<OpeningHourSlot>> FindByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             "select * from OpeningHourSlot where restaurant_id=@restaurantId",
             MapRowToOpeningHourSlot,
-            new QueryParameter("@restaurantId", restaurantId));
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(OpeningHourSlot openingHourSlot)
+    public async Task<int?> InsertAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -42,13 +44,16 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             (@restaurantId, @dayOfWeek, @openTime, @closeTime)
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@restaurantId", openingHourSlot.RestaurantId),
             new QueryParameter("@dayOfWeek", openingHourSlot.DayOfWeek),
             new QueryParameter("@openTime", openingHourSlot.OpenTime),
-            new QueryParameter("@closeTime", openingHourSlot.CloseTime));
+            new QueryParameter("@closeTime", openingHourSlot.CloseTime)
+            ],
+            cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(OpeningHourSlot openingHourSlot)
+    public async Task<bool> UpdateAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -56,18 +61,24 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             set day_of_week=@dayOfWeek, open_time=@openTime, close_time=@closeTime
             where id=@id
             """,
+            [
             new QueryParameter("@dayOfWeek", openingHourSlot.DayOfWeek),
             new QueryParameter("@openTime", openingHourSlot.OpenTime),
             new QueryParameter("@closeTime", openingHourSlot.CloseTime),
             new QueryParameter("@id", openingHourSlot.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             "delete from OpeningHourSlot where id=@id",
+            [
             new QueryParameter("@id", id)
+            ],
+            cancellationToken
         ) == 1;
     }
 }

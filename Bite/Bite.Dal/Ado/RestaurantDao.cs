@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Ado;
 
@@ -26,21 +27,24 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             updatedAt: (DateTime)row["updated_at"]);
     }
 
-    public async Task<IEnumerable<Restaurant>> FindAllAsync()
+    public async Task<IEnumerable<Restaurant>> FindAllAsync(CancellationToken cancellationToken = default)
     {
-        return await template.QueryAsync("select * from Restaurant", MapRowToRestaurant);
+        return await template.QueryAsync("select * from Restaurant", MapRowToRestaurant, [], cancellationToken);
     }
 
-    public async Task<Restaurant?> FindByIdAsync(int id)
+    public async Task<Restaurant?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             $"select * from Restaurant where id=@id", 
             MapRowToRestaurant, 
+            [
             new QueryParameter("@id", id)
+            ],
+            cancellationToken
         );
     }
 
-    public async Task<int?> InsertAsync(Restaurant restaurant)
+    public async Task<int?> InsertAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -51,14 +55,17 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             (@name, @menuId, @addressId, @webhook, @image)
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@name", restaurant.Name),
             new QueryParameter("@addressId", restaurant.AddressId),
             new QueryParameter("@webhook", restaurant.WebhookUrl),
             new QueryParameter("@image", restaurant.TitleImagePath)
+            ],
+            cancellationToken
         );
     }
 
-    public async Task<bool> UpdateAsync(Restaurant restaurant)
+    public async Task<bool> UpdateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -66,19 +73,25 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             set name=@name, menu_id=@menuId, address_id=@addressId, webhook_url=@webhook, title_image_path=@image
             where id=@id
             """,
+            [
             new QueryParameter("@name", restaurant.Name),
             new QueryParameter("@addressId", restaurant.AddressId),
             new QueryParameter("@webhook", restaurant.WebhookUrl),
             new QueryParameter("@image", restaurant.TitleImagePath),
             new QueryParameter("@id", restaurant.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             "delete from Restaurant where id=@id",
+            [
             new QueryParameter("@id", id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
