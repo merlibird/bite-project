@@ -2,7 +2,7 @@ BITE/
 │
 ├── src/
 │   ├── Bite.Api/                   	(Web API Projekt)
-│   │   ├── Controllers/            	(Nimmt HTTP-Anfragen entgegen)
+│   │   ├── Controllers/            	
 │   │   │   ├── RestaurantController.cs
 │   │   │   ├── OrderController.cs
 │   │   │   ├── MenuController.cs
@@ -58,42 +58,28 @@ BITE/
 │       ├── TokenService.cs
 │       └── StatisticsService.cs
 │
-├── Tests/ (Qualitätssicherung)
+├── Tests/                              (Tests)
 │      ├── UnitTests/ 					(Testet einzelne Methoden isoliert)
 │      │   ├── DeliveryCostServiceTests.cs
 │      │   ├── DistanceCalculatorTests.cs
 │      │   └── etc.
 │      │
-│      ├── IntegrationTests/ 			(Testet das Zusammenspiel mehrerer Komponenten)
-│      │   ├── RestaurantControllerTests.cs
-│      │   ├── OrderControllerTests.cs
-│      │   └── etc.
-│      │
-│      └── TestData/ 					(SQL-Skripte / LocalDB für Testumgebungen)
-│          ├── seed_restaurants.sql
-│          ├── seed_menus.sql
-│          └── seed_orders.sql
+│      └── IntegrationTests/ 			(Testet das Zusammenspiel mehrerer Komponenten)
+│          ├── RestaurantControllerTests.cs
+│          ├── OrderControllerTests.cs
+│          └── etc.    
 │
 ├── docs/
 │   ├── ER_Diagramm.png
 │   └── etc.
 │
+│
+├── db-sqlserver/
+│   ├── docker-compose.yml
+│   ├── init-db.sql
+│   └── fill-data.sql
+│
 ├── BITE.sln
 ├── docker-compose.yml
 ├── .gitignore
 └── README.md
-
-
-
-
-lt. chati: 
-
-Bite.Services → Bite.Application
-Bite.Dal.*    → Bite.Infrastructure.*
-
-src/
-├── Bite.Api              → eigenes Projekt ✅
-├── Bite.Application      → eigenes Projekt ✅
-├── Bite.Domain           → eigenes Projekt ✅
-├── Bite.Infrastructure   → eigenes Projekt ✅
-├── tests/Bite.UnitTests  → eigenes Projekt ✅
