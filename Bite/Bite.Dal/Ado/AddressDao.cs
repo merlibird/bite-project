@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Text;
+using System.Threading;
 
 namespace Bite.Dal.Ado;
 
@@ -28,15 +29,16 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             latitude: (double)row["latitude"]);
     }
 
-    public async Task<Address?> FindByIdAsync(int id)
+    public async Task<Address?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             "select * from Address where id=@id",
             MapRowToAddress,
-            new QueryParameter("@id", id));
+            [new QueryParameter("@id", id)],
+            cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(Address address)
+    public async Task<int?> InsertAsync(Address address, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
@@ -47,6 +49,7 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             (@street, @number, @zipCode, @city, @country, @additionalInfo, @longitude, @latitude)
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@street", address.Street),
             new QueryParameter("@number", address.Number),
             new QueryParameter("@zipCode", address.ZipCode),
@@ -54,10 +57,12 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             new QueryParameter("@country", address.Country),
             new QueryParameter("@additionalInfo", address.AdditionalInfo),
             new QueryParameter("@longitude", address.Longitude),
-            new QueryParameter("@latitude", address.Latitude));
+            new QueryParameter("@latitude", address.Latitude)
+            ],
+            cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(Address address)
+    public async Task<bool> UpdateAsync(Address address, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -65,16 +70,22 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             set additional_info=@additionalInfo
             where id=@id
             """,
+            [
             new QueryParameter("@additionalInfo", address.AdditionalInfo),
             new QueryParameter("@id", address.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             "delete from Address where id=@id",
+            [
             new QueryParameter("@id", id)
+            ],
+            cancellationToken
         ) == 1;
     }
 }

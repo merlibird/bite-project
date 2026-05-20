@@ -68,17 +68,19 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 
     private static object NullableParam(object? value) => value ?? DBNull.Value;
 
-    public async Task<IEnumerable<MenuItem>> FindAllAsync()
+    public async Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             $"""
             {MenuItemSelect}
             {MenuItemGroupBy}
             """,
-            MapRowToMenuItem);
+            MapRowToMenuItem,
+            [],
+            cancellationToken);
     }
 
-    public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId)
+    public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             $"""
@@ -87,10 +89,11 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             {MenuItemGroupBy}
             """,
             MapRowToMenuItem,
-            new QueryParameter("@restaurantId", restaurantId));
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
     }
 
-    public async Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId)
+    public async Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
             $"""
@@ -104,10 +107,11 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             {MenuItemGroupBy}
             """,
             MapRowToMenuItem,
-            new QueryParameter("@menuCategoryId", menuCategoryId));
+            [new QueryParameter("@menuCategoryId", menuCategoryId)],
+            cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(MenuItem menuItem)
+    public async Task<int?> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
     {
         string categoryIds = string.Join(",", menuItem.MenuCategoryIds.Distinct());
 
@@ -150,15 +154,18 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             select @menuItemId;
             """,
             row => (int)row[0],
+            [
             new QueryParameter("@restaurantId", menuItem.RestaurantId),
             new QueryParameter("@name", menuItem.Name),
             new QueryParameter("@description", NullableParam(menuItem.Description)),
             new QueryParameter("@price", menuItem.Price),
             new QueryParameter("@isActive", menuItem.IsActive),
-            new QueryParameter("@categoryIds", categoryIds));
+            new QueryParameter("@categoryIds", categoryIds))
+            ],
+            cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(MenuItem menuItem)
+    public async Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
             """
@@ -169,15 +176,18 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
                 is_active = @isActive
             where id = @id
             """,
+            [
             new QueryParameter("@name", menuItem.Name),
             new QueryParameter("@description", NullableParam(menuItem.Description)),
             new QueryParameter("@price", menuItem.Price),
             new QueryParameter("@isActive", menuItem.IsActive),
             new QueryParameter("@id", menuItem.Id)
+            ],
+            cancellationToken
         ) == 1;
     }
 
-    public async Task<bool> SetMenuCategoriesAsync(int menuItemId, IEnumerable<int> menuCategoryIds)
+    public async Task<bool> SetMenuCategoriesAsync(int menuItemId, IEnumerable<int> menuCategoryIds, CancellationToken cancellationToken = default)
     {
         var distinctIds = menuCategoryIds.Distinct().ToList();
         string categoryIds = string.Join(",", distinctIds);
