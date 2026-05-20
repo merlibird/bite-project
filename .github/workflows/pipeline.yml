@@ -53,6 +53,7 @@ jobs:
         run: docker compose down
 
       # - name: Publish app
+      #   working-directory: ./Bite
       #   run: dotnet publish -c Release -o publish
 
       # - name: Upload artifact

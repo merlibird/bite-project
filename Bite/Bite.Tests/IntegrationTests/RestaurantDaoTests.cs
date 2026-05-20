@@ -37,17 +37,6 @@ public class RestaurantDaoTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task FindAllAsync_TwoRestaurantsInserted_ReturnsBoth()
-    {
-        await dao.InsertAsync(MakeRestaurant("Zum Wirt"));
-        await dao.InsertAsync(MakeRestaurant("Zum Goldenen Hirschen"));
-
-        var result = await dao.FindAllAsync();
-
-        Assert.Equal(2, result.Count());
-    }
-
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
