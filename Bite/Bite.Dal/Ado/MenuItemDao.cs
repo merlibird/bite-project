@@ -3,6 +3,7 @@ using Bite.Dal.Interface;
 using Bite.Domain;
 using System.Data;
 using System.Linq;
+using System.Transactions;
 
 namespace Bite.Dal.Ado;
 
@@ -42,9 +43,7 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
     private static IReadOnlyCollection<int> MapMenuCategoryIds(IDataRecord row)
     {
         if (row["menu_category_ids"] is not string categoryIds)
-        {
             return [];
-        }
 
         return categoryIds
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -115,54 +114,47 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
     {
         string categoryIds = string.Join(",", menuItem.MenuCategoryIds.Distinct());
 
-        return await template.QuerySingleAsync(
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        int? menuItemId = await template.QuerySingleAsync(
             """
-            declare @insertedMenuItems table (id int);
-            declare @menuItemId int;
-
-            begin try
-                begin transaction;
-
-                insert into MenuItem
+            insert into MenuItem
                 (restaurant_id, name, description, price, is_active)
-                output inserted.id into @insertedMenuItems
-                values
+            output inserted.id
+            values
                 (@restaurantId, @name, @description, @price, @isActive);
-
-                select @menuItemId = id
-                from @insertedMenuItems;
-
-                if @categoryIds <> ''
-                begin
-                    insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-                    select
-                        @menuItemId,
-                        convert(int, value),
-                        @restaurantId
-                    from string_split(@categoryIds, ',');
-                end;
-
-                commit transaction;
-            end try
-            begin catch
-                if @@trancount > 0
-                    rollback transaction;
-
-                throw;
-            end catch;
-
-            select @menuItemId;
             """,
             row => (int)row[0],
             [
-            new QueryParameter("@restaurantId", menuItem.RestaurantId),
-            new QueryParameter("@name", menuItem.Name),
-            new QueryParameter("@description", NullableParam(menuItem.Description)),
-            new QueryParameter("@price", menuItem.Price),
-            new QueryParameter("@isActive", menuItem.IsActive),
-            new QueryParameter("@categoryIds", categoryIds))
+                new QueryParameter("@restaurantId", menuItem.RestaurantId),
+                new QueryParameter("@name", menuItem.Name),
+                new QueryParameter("@description", NullableParam(menuItem.Description)),
+                new QueryParameter("@price", menuItem.Price),
+                new QueryParameter("@isActive", menuItem.IsActive)
             ],
             cancellationToken);
+
+        if (menuItemId is not null && categoryIds != string.Empty)
+        {
+            await template.ExecuteAsync(
+                """
+                insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
+                select
+                    @menuItemId,
+                    convert(int, value),
+                    @restaurantId
+                from string_split(@categoryIds, ',');
+                """,
+                [
+                    new QueryParameter("@menuItemId", menuItemId),
+                    new QueryParameter("@restaurantId", menuItem.RestaurantId),
+                    new QueryParameter("@categoryIds", categoryIds)
+                ],
+                cancellationToken);
+        }
+
+        scope.Complete();
+        return menuItemId;
     }
 
     public async Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
@@ -177,11 +169,11 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             where id = @id
             """,
             [
-            new QueryParameter("@name", menuItem.Name),
-            new QueryParameter("@description", NullableParam(menuItem.Description)),
-            new QueryParameter("@price", menuItem.Price),
-            new QueryParameter("@isActive", menuItem.IsActive),
-            new QueryParameter("@id", menuItem.Id)
+                new QueryParameter("@name", menuItem.Name),
+                new QueryParameter("@description", NullableParam(menuItem.Description)),
+                new QueryParameter("@price", menuItem.Price),
+                new QueryParameter("@isActive", menuItem.IsActive),
+                new QueryParameter("@id", menuItem.Id)
             ],
             cancellationToken
         ) == 1;
@@ -193,46 +185,39 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
         string categoryIds = string.Join(",", distinctIds);
         int expectedCount = distinctIds.Count;
 
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        await template.ExecuteAsync(
+            "delete from MenuItemMenuCategory where menu_item_id = @menuItemId;",
+            [new QueryParameter("@menuItemId", menuItemId)],
+            cancellationToken);
+
+        if (categoryIds != string.Empty)
+        {
+            await template.ExecuteAsync(
+                """
+                insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
+                select
+                    @menuItemId,
+                    convert(int, s.value),
+                    mi.restaurant_id
+                from string_split(@categoryIds, ',') s
+                join MenuItem mi on mi.id = @menuItemId;
+                """,
+                [
+                    new QueryParameter("@menuItemId", menuItemId),
+                    new QueryParameter("@categoryIds", categoryIds)
+                ],
+                cancellationToken);
+        }
+
         int? assignedCount = await template.QuerySingleAsync(
-            """
-            declare @assignedCount int = 0;
-
-            begin try
-                begin transaction;
-
-                delete from MenuItemMenuCategory
-                where menu_item_id = @menuItemId;
-
-                if @categoryIds <> ''
-                begin
-                    insert into MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-                    select
-                        @menuItemId,
-                        convert(int, s.value),
-                        mi.restaurant_id
-                    from string_split(@categoryIds, ',') s
-                    join MenuItem mi on mi.id = @menuItemId;
-                end;
-
-                select @assignedCount = count(*)
-                from MenuItemMenuCategory
-                where menu_item_id = @menuItemId;
-
-                commit transaction;
-            end try
-            begin catch
-                if @@trancount > 0
-                    rollback transaction;
-
-                throw;
-            end catch;
-
-            select @assignedCount;
-            """,
+            "select count(*) from MenuItemMenuCategory where menu_item_id = @menuItemId;",
             row => (int)row[0],
-            new QueryParameter("@menuItemId", menuItemId),
-            new QueryParameter("@categoryIds", categoryIds));
+            [new QueryParameter("@menuItemId", menuItemId)],
+            cancellationToken);
 
+        scope.Complete();
         return assignedCount == expectedCount;
     }
 }
