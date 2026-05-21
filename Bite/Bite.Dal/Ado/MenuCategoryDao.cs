@@ -45,7 +45,7 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """

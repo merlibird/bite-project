@@ -33,7 +33,7 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """

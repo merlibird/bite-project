@@ -12,7 +12,7 @@ public interface IMenuItemDao
 
     Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId, CancellationToken cancellationToken = default);
 
-    Task<int?> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
+    Task<int> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
 

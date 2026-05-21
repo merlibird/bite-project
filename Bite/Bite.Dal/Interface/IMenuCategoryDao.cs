@@ -14,7 +14,7 @@ public interface IMenuCategoryDao
 
     Task<MenuCategory?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<int?> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default);
+    Task<int> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default);
 

@@ -21,7 +21,7 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
             id: (int)row["id"],
             name: (string)row["name"],
             addressId: (int)row["address_id"],
-            webhookUrl: row["webhook_url"] as string,
+            webhookUrl: (string)row["webhook_url"],
             titleImagePath: row["title_image_path"] as string,
             createdAt: (DateTime)row["created_at"],
             updatedAt: (DateTime)row["updated_at"]);

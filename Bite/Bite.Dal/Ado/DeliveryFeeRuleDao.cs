@@ -52,7 +52,7 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(DeliveryFeeRule deliveryFeeRule, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(DeliveryFeeRule deliveryFeeRule, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """

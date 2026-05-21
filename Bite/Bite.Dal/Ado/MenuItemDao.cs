@@ -110,7 +110,7 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(MenuItem menuItem, CancellationToken cancellationToken = default)
     {
         string categoryIds = string.Join(",", menuItem.MenuCategoryIds.Distinct());
 
