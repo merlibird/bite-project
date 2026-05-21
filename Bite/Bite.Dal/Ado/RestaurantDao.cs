@@ -70,7 +70,7 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
         return await template.ExecuteAsync(
             """
             update Restaurant
-            set name=@name, menu_id=@menuId, address_id=@addressId, webhook_url=@webhook, title_image_path=@image
+            set name=@name, address_id=@addressId, webhook_url=@webhook, title_image_path=@image
             where id=@id
             """,
             [

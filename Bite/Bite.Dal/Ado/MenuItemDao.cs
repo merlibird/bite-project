@@ -116,7 +116,7 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-        int? menuItemId = await template.QuerySingleAsync(
+        int menuItemId = await template.QuerySingleAsync(
             """
             insert into MenuItem
                 (restaurant_id, name, description, price, is_active)
@@ -134,7 +134,7 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             ],
             cancellationToken);
 
-        if (menuItemId is not null && categoryIds != string.Empty)
+        if (categoryIds != string.Empty)
         {
             await template.ExecuteAsync(
                 """

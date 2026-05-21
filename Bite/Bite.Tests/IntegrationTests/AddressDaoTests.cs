@@ -1,5 +1,6 @@
 ﻿using Bite.Dal.Ado;
 using Bite.Dal.Common;
+using Bite.Dal.Interface;
 using Bite.Domain;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,8 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bite.Tests.IntegrationTests;
 
-public class AddressDaoTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database")]
+public class AddressDaoTests : IAsyncLifetime
 {
     private readonly AddressDao dao;
     private readonly AdoTemplate template;
@@ -23,7 +25,12 @@ public class AddressDaoTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
 
     // beforeEach --> clear the Address table
     public async Task InitializeAsync()
-        => await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
+    {
+        await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
+    }
 
     // afterEach --> do nothing
     public Task DisposeAsync() => Task.CompletedTask;
