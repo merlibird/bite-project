@@ -10,6 +10,8 @@ public interface IMenuCategoryDao
 {
     Task<IEnumerable<MenuCategory>> FindAllAsync(CancellationToken cancellationToken = default);
 
+    Task<IEnumerable<MenuCategory>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
+
     Task<MenuCategory?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<int?> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default);

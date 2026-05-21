@@ -18,6 +18,7 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
     {
         return new MenuCategory(
             id: (int)row["id"],
+            restaurantId: (int)row["restaurant_id"],
             name: (string)row["name"]);
     }
 
@@ -35,18 +36,30 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
             cancellationToken);
     }
 
+    public async Task<IEnumerable<MenuCategory>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync(
+            "select * from MenuCategory where restaurant_id=@restaurantId",
+            MapRowToMenuCategory,
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+    }
+
     public async Task<int?> InsertAsync(MenuCategory menuCategory, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """
             insert into MenuCategory
-            (name)
+            (restaurant_id, name)
             output inserted.id
             values
-            (@name)
+            (@restaurantId, @name)
             """,
             row => (int)row[0],
-            [new QueryParameter("@name", menuCategory.Name)],
+            [
+                new QueryParameter("@restaurantId", menuCategory.RestaurantId), 
+                new QueryParameter("@name", menuCategory.Name)
+            ],
             cancellationToken);
     }
 
@@ -55,12 +68,13 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return await template.ExecuteAsync(
             """
             update MenuCategory
-            set name=@name
+            set restaurant_id=@restaurantId, name=@name
             where id=@id
             """,
             [
-            new QueryParameter("@name", menuCategory.Name),
-            new QueryParameter("@id", menuCategory.Id)
+                new QueryParameter("@restaurantId", menuCategory.RestaurantId),
+                new QueryParameter("@name", menuCategory.Name),
+                new QueryParameter("@id", menuCategory.Id)
             ],
             cancellationToken
         ) == 1;

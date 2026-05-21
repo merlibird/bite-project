@@ -21,6 +21,7 @@ GO
 -- 2. Delete existing tables (if any)
 DROP TABLE IF EXISTS DeliveryFeeRule;
 DROP TABLE IF EXISTS DeliveryZone;
+DROP TABLE IF EXISTS MenuItemMenuCategory;
 DROP TABLE IF EXISTS MenuItem;
 DROP TABLE IF EXISTS MenuCategory;
 DROP TABLE IF EXISTS OpeningHourSlot;
@@ -45,13 +46,6 @@ CREATE TABLE Address (
 );
 PRINT 'Table "Address" created.';
 
-CREATE TABLE MenuCategory (
-    id   INT IDENTITY(1,1),
-    name NVARCHAR(50)       NOT NULL UNIQUE,
-    CONSTRAINT PK_MenuCategory PRIMARY KEY (id)
-);
-PRINT 'Table "MenuCategory" created.';
-
 CREATE TABLE Restaurant (
     id               INT IDENTITY(1,1),
     name             NVARCHAR(100) NOT NULL,
@@ -65,10 +59,20 @@ CREATE TABLE Restaurant (
 );
 PRINT 'Table "Restaurant" created.';
 
+CREATE TABLE MenuCategory (
+    id            INT IDENTITY(1,1),
+    restaurant_id INT          NOT NULL,
+    name          NVARCHAR(50) NOT NULL,
+    CONSTRAINT PK_MenuCategory PRIMARY KEY (id),
+    CONSTRAINT UQ_MenuCategory_Restaurant_Name UNIQUE (restaurant_id, name),
+    CONSTRAINT UQ_MenuCategory_Id_Restaurant UNIQUE (id, restaurant_id),
+    CONSTRAINT FK_MenuCategory_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id) ON DELETE CASCADE
+);
+PRINT 'Table "MenuCategory" created.';
+
 CREATE TABLE MenuItem (
     id          INT IDENTITY(1,1),
     restaurant_id INT          NOT NULL,
-    category_id INT            NOT NULL,
     name        NVARCHAR(100)  NOT NULL,
     description NVARCHAR(255),
     price       DECIMAL(10, 2) NOT NULL,
@@ -76,10 +80,20 @@ CREATE TABLE MenuItem (
     created_at  DATETIME       DEFAULT GETDATE(),
     updated_at  DATETIME       DEFAULT GETDATE(),
     CONSTRAINT PK_MenuItem PRIMARY KEY (id),
-    CONSTRAINT FK_MenuItem_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id),
-    CONSTRAINT FK_MenuItem_Category FOREIGN KEY (category_id) REFERENCES MenuCategory(id)
+    CONSTRAINT UQ_MenuItem_Id_Restaurant UNIQUE (id, restaurant_id),
+    CONSTRAINT FK_MenuItem_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id)
 );
 PRINT 'Table "MenuItem" created.';
+
+CREATE TABLE MenuItemMenuCategory (
+    menu_item_id     INT NOT NULL,
+    menu_category_id INT NOT NULL,
+    restaurant_id    INT NOT NULL,
+    CONSTRAINT PK_MenuItemMenuCategory PRIMARY KEY (menu_item_id, menu_category_id),
+    CONSTRAINT FK_MenuItemMenuCategory_MenuItem FOREIGN KEY (menu_item_id, restaurant_id) REFERENCES MenuItem(id, restaurant_id) ON DELETE CASCADE,
+    CONSTRAINT FK_MenuItemMenuCategory_MenuCategory FOREIGN KEY (menu_category_id, restaurant_id) REFERENCES MenuCategory(id, restaurant_id) ON DELETE CASCADE
+);
+PRINT 'Table "MenuItemMenuCategory" created.';
 
 CREATE TABLE OpeningHourSlot (
     id            INT IDENTITY(1,1),
