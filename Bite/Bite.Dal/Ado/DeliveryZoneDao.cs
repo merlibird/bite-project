@@ -32,7 +32,7 @@ public class DeliveryZoneDao(IConnectionFactory connectionFactory) : IDeliveryZo
             cancellationToken);
     }
 
-    public async Task<int?> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default)
+    public async Task<int> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
             """

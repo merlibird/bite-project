@@ -10,7 +10,7 @@ public interface IDeliveryZoneDao
 {
     Task<IEnumerable<DeliveryZone>> FindByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 
-    Task<int?> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
+    Task<int> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
 

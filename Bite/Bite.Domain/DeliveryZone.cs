@@ -13,7 +13,7 @@ namespace Bite.Domain
         public int Id { get; init; } = id;
         public int RestaurantId { get; init; } = restaurantId;
         public decimal MinOrderValue { get; set; } = minOrderValue;
-        public double MaxDistance { get; set; } = maxDistance;  // in km
+        public double MaxDistance { get; set; } = maxDistance;
 
         public override string ToString()
         {

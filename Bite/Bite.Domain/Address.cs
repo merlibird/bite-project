@@ -11,9 +11,9 @@ namespace Bite.Domain
         string zipCode,
         string city,
         string country,
-        string? additionalInfo,
         double longitude,
-        double latitude)
+        double latitude,
+        string? additionalInfo = null)
     {
         public int Id { get; init; } = id;
         public string Street { get; init; } = street;
@@ -21,13 +21,12 @@ namespace Bite.Domain
         public string ZipCode { get; init; } = zipCode;
         public string City { get; init; } = city;
         public string Country { get; init; } = country;
-        public string? AdditionalInfo { get; set; } = additionalInfo;
         public double Longitude { get; init; } = longitude;
         public double Latitude { get; init; } = latitude;
+        public string? AdditionalInfo { get; set; } = additionalInfo;
 
-        public override string ToString()
-        {
-            return $"Address {Id}: {Street} {Number}, {ZipCode} {City}, {Country} (Longitude: {Longitude}, Latitude: {Latitude})";
-        }
+        public override string ToString() =>
+            $"Address {Id}: {Street} {Number}, {ZipCode} {City}, {Country} (Longitude: {Longitude}, Latitude: {Latitude}), " +
+            (AdditionalInfo != null ? $"AdditionalInfo: {AdditionalInfo}" : "");
     }
 }
