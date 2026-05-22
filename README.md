@@ -5,7 +5,7 @@
 
 #### Das Projekt.
 Der Trend, Essen online zu bestellen, ist ungebrochen. Deshalb entwickeln Sie eine App, die alle
-derzeit am Markt befindlichen Systeme (zumindest technologisch) alt aussehen la sst. Restaurants vero ffentlichen ihre Speisekarte, hungrige Studierende bestellen ihre Lieblingsspeisen. 
+derzeit am Markt befindlichen Systeme (zumindest technologisch) alt aussehen lässt. Restaurants veröffentlichen ihre Speisekarte, hungrige Studierende bestellen ihre Lieblingsspeisen. 
 
 ## Setup 
 
