@@ -1,0 +1,63 @@
+name: BITE CI/CD
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+
+jobs:
+  build:
+    name: Build & Test Bite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start database
+        working-directory: ./db-sqlserver
+        run: docker compose up db --wait
+        env:
+          Sa_Password: ${{ secrets.SA_PASSWORD }}
+      
+      - name: Initialize database
+        working-directory: ./db-sqlserver
+        run: |
+          docker compose up init-db
+          docker compose logs init-db
+        env:
+          Sa_Password: ${{ secrets.SA_PASSWORD }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        working-directory: ./Bite
+        run: dotnet restore
+
+      - name: Build
+        working-directory: ./Bite
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        working-directory: ./Bite/Bite.Tests
+        run: dotnet test --no-build --configuration Release --verbosity normal
+        env:
+          ConnectionStrings__BiteDbConnection: "Data Source=localhost;Initial Catalog=BiteTestDb;User ID=sa;Password=${{ secrets.SA_PASSWORD }};Trust Server Certificate=True"
+      
+      - name: Teardown database
+        working-directory: ./db-sqlserver
+        if: always()
+        run: docker compose down
+
+      # - name: Publish app
+      #   working-directory: ./Bite
+      #   run: dotnet publish -c Release -o publish
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: bite-app
+      #     path: publish/
