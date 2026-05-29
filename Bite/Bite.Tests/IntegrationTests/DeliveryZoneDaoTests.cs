@@ -210,6 +210,6 @@ public class DeliveryZoneDaoTests : IAsyncLifetime
     {
         int addressId = await SeedAddressAsync();
         return await restaurantDao.InsertAsync(
-            new Restaurant(0, "Testrestaurant", addressId, "https://example.com/webhook"));
+            new Restaurant(0, "Testrestaurant", addressId, "https://example.com/webhook", Guid.NewGuid().ToString()));
     }
 }

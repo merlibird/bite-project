@@ -52,9 +52,11 @@ CREATE TABLE Restaurant (
     address_id       INT NOT NULL,
     webhook_url      NVARCHAR(255),
     title_image_path NVARCHAR(255),
+    api_key          NVARCHAR(100) NOT NULL,
     created_at       DATETIME DEFAULT GETDATE(),
     updated_at       DATETIME DEFAULT GETDATE(),
     CONSTRAINT PK_Restaurant PRIMARY KEY (id),
+    CONSTRAINT UQ_Restaurant_ApiKey UNIQUE (api_key),
     CONSTRAINT FK_Restaurant_Address FOREIGN KEY (address_id) REFERENCES Address(id)
 );
 PRINT 'Table "Restaurant" created.';
