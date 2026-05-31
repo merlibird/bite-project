@@ -12,6 +12,7 @@ namespace Bite.Domain
         public int Id { get; init; } = id;
         public int RestaurantId { get; init; } = restaurantId;
         public string Name { get; set; } = name;
+        public IEnumerable<object> Items { get; set; }
 
         public override string ToString()
         {

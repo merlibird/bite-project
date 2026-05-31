@@ -1,6 +1,4 @@
 @Bite.Api_HostAddress = http://localhost:5126
 
-GET {{Bite.Api_HostAddress}}/weatherforecast/
+GET {{Bite.Api_HostAddress}}/api/restaurants/2/menu
 Accept: application/json
-
-###

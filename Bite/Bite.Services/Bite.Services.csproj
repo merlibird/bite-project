@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Bite.Dal\Bite.Dal.csproj" />
+    <ProjectReference Include="..\Bite.Domain\Bite.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
