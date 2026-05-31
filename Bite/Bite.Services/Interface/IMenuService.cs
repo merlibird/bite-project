@@ -1,4 +1,4 @@
-﻿using Bite.Api.Dtos;
+﻿using Bite.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,6 +6,6 @@ using System.Text;
 namespace Bite.Services.Interface;
 public interface IMenuService
 {
-    public Task<MenuDto> GetMenuAsync(int restaurantId);
+    public Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default);
 }
 

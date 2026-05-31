@@ -1,17 +1,56 @@
+using Bite.Dal.Ado;
+using Bite.Dal.Common;
+using Bite.Dal.Interface;
+using Bite.Services.Implementation;
+using Bite.Services.Interface;
+using System.Text.Json.Serialization;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddControllers(options =>
+{
+    options.ReturnHttpNotAcceptable = true;
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+})
+.AddXmlDataContractSerializerFormatters();
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApiDocument(settings =>
+{
+    settings.Title = "Bite API";
+});
+
+builder.Services.AddCors();
+
+// ConnectionFactory
+builder.Services.AddSingleton<IConnectionFactory>(_ =>
+    DefaultConnectionFactory.FromConfiguration(
+        builder.Configuration,
+        "BiteDbConnection",
+        "ProviderName"));
+
+// Services
+builder.Services.AddScoped<IMenuService, MenuService>();
+
+// DAOs
+builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
+builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
+builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+
+    app.UseOpenApi();
+    app.UseSwaggerUi(settings =>
+    {
+        settings.Path = "/swagger";
+    });
 }
 
 app.UseHttpsRedirection();

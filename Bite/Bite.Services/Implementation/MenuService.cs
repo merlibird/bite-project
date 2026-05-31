@@ -1,52 +1,47 @@
-﻿using Bite.Api.Dtos;
-using Bite.Dal.Ado;
-using Bite.Dal.Interface;
+﻿using Bite.Dal.Interface;
 using Bite.Domain;
 using Bite.Services.Interface;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Bite.Services.Implementation;
 
 public class MenuService : IMenuService
 {
+    private readonly IRestaurantDao restaurantDao;
     private readonly IMenuCategoryDao menuCategoryDao;
     private readonly IMenuItemDao menuItemDao;
 
-    public MenuService(IMenuCategoryDao menuCategoryDao, IMenuItemDao menuItemDao)
+    public MenuService(
+        IRestaurantDao restaurantDao,
+        IMenuCategoryDao menuCategoryDao,
+        IMenuItemDao menuItemDao)
     {
+        this.restaurantDao = restaurantDao;
         this.menuCategoryDao = menuCategoryDao;
         this.menuItemDao = menuItemDao;
     }
 
-    public async Task<MenuDto> GetMenuAsync(int restaurantId)
+    public async Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
-        var categories = await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId);
-        var items = await menuItemDao.FindAllByRestaurantIdAsync(restaurantId);
-
-        return new MenuDto
+        var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
+        if (restaurant is null)
         {
-            RestaurantId = restaurantId,
-            Categories = categories.Select(category => new MenuCategoryDto
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Items = items
+            return null;
+        }
+
+        var categories = await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
+        var items = await menuItemDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
+
+        var categoryWithItems = categories
+            .Select(category => new MenuCategoryWithItems(
+                id: category.Id,
+                name: category.Name,
+                items: items
                     .Where(item => item.MenuCategoryIds.Contains(category.Id))
-                    .Select(item => new MenuItemDto
-                    {
-                        Id = item.Id,
-                        Name = item.Name,
-                        Description = item.Description,
-                        Price = item.Price,
-                        IsActive = item.IsActive
-                    })
-                    .ToList()
-            }).ToList()
-        };
+                    .ToList()))
+            .ToList();
+
+        return new Menu(
+            restaurantId: restaurantId,
+            categories: (IEnumerable<MenuCategory>)categoryWithItems);
     }
-
-
 }
-
