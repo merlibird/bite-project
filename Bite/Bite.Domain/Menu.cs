@@ -5,9 +5,9 @@ using System.Text;
 namespace Bite.Domain;
 public class Menu(
       int restaurantId,
-      IEnumerable<MenuCategory> categories)
+      IEnumerable<MenuCategoryWithItems> categories)
     {
         public int RestaurantId { get; init; } = restaurantId;
-        public IEnumerable<MenuCategory> Categories { get; set; } = categories;
+        public IEnumerable<MenuCategoryWithItems> Categories { get; set; } = categories;
 }
 

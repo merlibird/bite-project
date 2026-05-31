@@ -42,6 +42,6 @@ public class MenuService : IMenuService
 
         return new Menu(
             restaurantId: restaurantId,
-            categories: (IEnumerable<MenuCategory>)categoryWithItems);
+            categories: categoryWithItems);  // ← kein Cast mehr nötig
     }
 }
