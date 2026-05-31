@@ -9,6 +9,7 @@ namespace Bite.Domain
         string name,
         int addressId,
         string webhookUrl,
+        string apiKey,
         string? titleImagePath = null,
         DateTime? createdAt = null,
         DateTime? updatedAt = null)
@@ -17,6 +18,7 @@ namespace Bite.Domain
         public string Name { get; set; } = name;
         public int AddressId { get; set; } = addressId;
         public string WebhookUrl { get; set; } = webhookUrl;
+        public string ApiKey { get; init; } = apiKey;
         public string? TitleImagePath { get; set; } = titleImagePath;
         public DateTime? CreatedAt { get; init; } = createdAt;
         public DateTime? UpdatedAt { get; init; } = updatedAt;

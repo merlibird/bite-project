@@ -145,7 +145,7 @@ public class RestaurantDaoTests : IAsyncLifetime
     {
         int addressId = await SeedAddressAsync();
         // not using MakeRestaurant() to avoid inserting a new restaurant with id=0
-        var ghost = new Restaurant(69420, "Ghost Restaurant", addressId, "https://ghost.example.com/webhook");
+        var ghost = new Restaurant(69420, "Ghost Restaurant", addressId, "https://ghost.example.com/webhook", "non-existing-api-key");
 
         var result = await dao.UpdateAsync(ghost);
 
@@ -212,8 +212,9 @@ public class RestaurantDaoTests : IAsyncLifetime
         string name,
         int addressId,
         string webhookUrl = "example.com/webhook",
-        string? titleImagePath = null) =>
-            new Restaurant(0, name, addressId, webhookUrl, titleImagePath);
+        string? titleImagePath = null,
+        string? apiKey = null) =>
+            new Restaurant(0, name, addressId, webhookUrl, apiKey ?? Guid.NewGuid().ToString(), titleImagePath);
 
     private async Task<int> SeedAddressAsync() =>
         await addressDao.InsertAsync(
