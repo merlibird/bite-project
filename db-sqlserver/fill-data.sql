@@ -34,8 +34,8 @@ INSERT INTO Address (street, number, zip_code, city, country, longitude, latitud
 VALUES ('Softwarepark', '11', '4232', 'Hagenberg', 'Austria', 14.5144, 48.3684);
 SET @addrNimmersatt = SCOPE_IDENTITY();
 
-INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path)
-VALUES ('Restaurant Nimmersatt', @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png');
+INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
+VALUES ('Restaurant Nimmersatt', @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png', 'DUMMY_KEY_NIMMERSATT_12345');
 SET @restNimmersatt = SCOPE_IDENTITY();
 
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Pizza');
@@ -117,8 +117,8 @@ INSERT INTO Address (street, number, zip_code, city, country, longitude, latitud
 VALUES ('Hauptstrasse', '42', '1010', 'Wien', 'Austria', 16.3738, 48.2082);
 SET @addrBurger = SCOPE_IDENTITY();
 
-INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path)
-VALUES ('Burger Bude Wien', @addrBurger, 'https://hooks.burgerbude.at/bite', 'img/burgerbude.png');
+INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
+VALUES ('Burger Bude Wien', @addrBurger, 'https://hooks.burgerbude.at/bite', 'img/burgerbude.png', 'DUMMY_KEY_BURGERBUDE_12345');
 SET @restBurger = SCOPE_IDENTITY();
 
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restBurger, 'Burger');
@@ -193,8 +193,8 @@ INSERT INTO Address (street, number, zip_code, city, country, longitude, latitud
 VALUES ('Mariahilfer Strasse', '88', '1060', 'Wien', 'Austria', 16.3540, 48.1970);
 SET @addrSakura = SCOPE_IDENTITY();
 
-INSERT INTO Restaurant (name,  address_id, webhook_url, title_image_path)
-VALUES ('Sakura Sushi', @addrSakura, 'https://webhooks.sakura-sushi.at/orders', 'img/sakura.png');
+INSERT INTO Restaurant (name,  address_id, webhook_url, title_image_path, api_key)
+VALUES ('Sakura Sushi', @addrSakura, 'https://webhooks.sakura-sushi.at/orders', 'img/sakura.png', 'DUMMY_KEY_SAKURA_12345');
 SET @restSakura = SCOPE_IDENTITY();
 
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSakura, 'Sushi');

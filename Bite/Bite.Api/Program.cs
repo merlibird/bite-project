@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options =>
 {
-    options.ReturnHttpNotAcceptable = true;
+    //options.ReturnHttpNotAcceptable = true;
 })
 .AddJsonOptions(options =>
 {
@@ -35,11 +35,15 @@ builder.Services.AddSingleton<IConnectionFactory>(_ =>
 
 // Services
 builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<IRestaurantService, RestaurantService>();
 
 // DAOs
 builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
 builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
 builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
+builder.Services.AddScoped<IAddressDao, AddressDao>();
+builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
 
 var app = builder.Build();
 
@@ -54,6 +58,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthorization();
 
