@@ -43,6 +43,23 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
         );
     }
 
+    public async Task<Restaurant?> FindByNameAndCityAsync(string name, string city, CancellationToken cancellationToken = default)
+    {
+        return await template.QuerySingleAsync(
+            """
+            select r.* from Restaurant r
+            join Address a on r.address_id = a.id
+            where r.name = @name and a.city = @city
+            """,
+            MapRowToRestaurant,
+            [
+                new QueryParameter("@name", name),
+                new QueryParameter("@city", city)
+            ],
+            cancellationToken
+        );
+    }
+
     public async Task<Restaurant?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
