@@ -50,13 +50,13 @@ externe API
 
 ## 10
 
-* PATCH: `orders/{id}`
+* PATCH: `orders/{orderCode}`
 
   (trotzdem API-Key abfragen, Status im http-body)
 
 ## 11
 
-* Get: `orders/{id}/status-change/{token}`
+* Get: `orders/{orderCode}/status-change/{token}`
 
   (API key erforderlich)
 
