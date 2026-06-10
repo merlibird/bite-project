@@ -20,7 +20,6 @@ GO
 
 -- 2. Delete existing tables (if any)
 DROP TABLE IF EXISTS OrderStatusToken;
-DROP TABLE IF EXISTS StatusHistoryEntry;
 DROP TABLE IF EXISTS OrderItem;
 DROP TABLE IF EXISTS CustomerOrder;
 DROP TABLE IF EXISTS DeliveryFeeRule;
@@ -160,23 +159,6 @@ CREATE TABLE OrderItem (
     CONSTRAINT FK_OrderItem_MenuItem FOREIGN KEY (menu_item_id) REFERENCES MenuItem(id)
 );
 PRINT 'Table "OrderItem" created.';
-
-CREATE TABLE StatusHistoryEntry (
-    id         INT IDENTITY(1,1),
-    order_id   INT          NOT NULL,
-    old_status NVARCHAR(30),
-    new_status NVARCHAR(30) NOT NULL,
-    timestamp  DATETIME     NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT PK_StatusHistoryEntry PRIMARY KEY (id),
-    CONSTRAINT CK_StatusHistoryEntry_OldStatus CHECK (old_status IS NULL OR old_status IN (
-        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
-    )),
-    CONSTRAINT CK_StatusHistoryEntry_NewStatus CHECK (new_status IN (
-        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
-    )),
-    CONSTRAINT FK_StatusHistoryEntry_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE
-);
-PRINT 'Table "StatusHistoryEntry" created.';
 
 CREATE TABLE OrderStatusToken (
     id            INT IDENTITY(1,1),
