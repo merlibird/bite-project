@@ -15,7 +15,8 @@ public class OrderItemDao(IConnectionFactory connectionFactory) : IOrderItemDao
             id: (int)row["id"],
             orderId: (int)row["order_id"],
             menuItemId: (int)row["menu_item_id"],
-            quantity: (int)row["quantity"]);
+            quantity: (int)row["quantity"],
+            unitPrice: (decimal)row["unit_price"]);
     }
 
     public async Task<IEnumerable<OrderItem>> FindByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
@@ -32,16 +33,17 @@ public class OrderItemDao(IConnectionFactory connectionFactory) : IOrderItemDao
         return await template.QuerySingleAsync(
             """
             insert into OrderItem
-            (order_id, menu_item_id, quantity)
+            (order_id, menu_item_id, quantity, unit_price)
             output inserted.id
             values
-            (@orderId, @menuItemId, @quantity)
+            (@orderId, @menuItemId, @quantity, @unitPrice)
             """,
             row => (int)row[0],
             [
             new QueryParameter("@orderId", orderItem.OrderId),
             new QueryParameter("@menuItemId", orderItem.MenuItemId),
-            new QueryParameter("@quantity", orderItem.Quantity)
+            new QueryParameter("@quantity", orderItem.Quantity),
+            new QueryParameter("@unitPrice", orderItem.UnitPrice)
             ],
             cancellationToken);
     }

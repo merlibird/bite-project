@@ -137,6 +137,8 @@ CREATE TABLE CustomerOrder (
     address_id    INT           NOT NULL,
     order_code    VARCHAR(16)   NOT NULL,
     status        NVARCHAR(30)  NOT NULL,
+    delivery_fee  DECIMAL(10,2) NOT NULL CHECK(delivery_fee >= 0),
+    total         DECIMAL(10,2) NOT NULL CHECK(total >= 0),
     created_at    DATETIME      DEFAULT GETDATE(),
     updated_at    DATETIME      DEFAULT GETDATE(),
     CONSTRAINT PK_CustomerOrder PRIMARY KEY (id),
@@ -151,9 +153,10 @@ PRINT 'Table "CustomerOrder" created.';
 
 CREATE TABLE OrderItem (
     id           INT IDENTITY(1,1),
-    order_id     INT NOT NULL,
-    menu_item_id INT NOT NULL,
-    quantity     INT NOT NULL CHECK(quantity > 0),
+    order_id     INT           NOT NULL,
+    menu_item_id INT           NOT NULL,
+    quantity     INT           NOT NULL CHECK(quantity > 0),
+    unit_price   DECIMAL(10,2) NOT NULL CHECK(unit_price >= 0),
     CONSTRAINT PK_OrderItem PRIMARY KEY (id),
     CONSTRAINT FK_OrderItem_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE,
     CONSTRAINT FK_OrderItem_MenuItem FOREIGN KEY (menu_item_id) REFERENCES MenuItem(id)
