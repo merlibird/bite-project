@@ -3,7 +3,7 @@
 GET {{Bite.Api_HostAddress}}/api/restaurants/2/menu
 Accept: application/json
 
-### Register a new Restaurant
+### Register a new Restaurant try this values in swagger ui (https://localhost:7046/swagger)
 POST {{Bite.Api_HostAddress}}/api/restaurants
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
