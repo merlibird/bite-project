@@ -2,3 +2,8 @@
 
 GET {{Bite.Api_HostAddress}}/api/restaurants/2/menu
 Accept: application/json
+
+###
+
+GET {{Bite.Api_HostAddress}}/api/restaurants?latitude=48.368368883920425&longitude=14.514449032326327&openNow=true&count=10
+Accept: application/json

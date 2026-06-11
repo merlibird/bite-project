@@ -35,9 +35,13 @@ builder.Services.AddSingleton<IConnectionFactory>(_ =>
 
 // Services
 builder.Services.AddScoped<IMenuService, MenuService>();
+builder.Services.AddScoped<IRestaurantService, RestaurantService>();
+builder.Services.AddSingleton(TimeProvider.System);
 
 // DAOs
 builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
+builder.Services.AddScoped<IAddressDao, AddressDao>();
+builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
 builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
 builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
 
