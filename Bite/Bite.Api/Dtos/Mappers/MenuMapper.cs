@@ -5,6 +5,26 @@ namespace Bite.Api.Dtos.Mappers;
 
 public static class MenuMapper
 {
+    public static Menu ToMenu(this UpdateMenuRequest request, int restaurantId)
+    {
+        return new Menu(
+            restaurantId: restaurantId,
+            categories: (request.Categories ?? [])
+                .Select(category => new MenuCategoryWithItems(
+                    id: 0,
+                    name: category.Name,
+                    items: (category.Items ?? [])
+                        .Select(item => new MenuItem(
+                            id: 0,
+                            restaurantId: restaurantId,
+                            name: item.Name,
+                            description: item.Description,
+                            price: item.Price,
+                            isActive: item.IsActive))
+                        .ToList()))
+                .ToList());
+    }
+
     public static MenuDto ToMenuDto(this Menu menu)
     {
         return new MenuDto

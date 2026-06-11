@@ -17,4 +17,6 @@ public interface IMenuItemDao
     Task<bool> UpdateAsync(MenuItem menuItem, CancellationToken cancellationToken = default);
 
     Task<bool> SetMenuCategoriesAsync(int menuItemId, IEnumerable<int> menuCategoryIds, CancellationToken cancellationToken = default);
+
+    Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 }

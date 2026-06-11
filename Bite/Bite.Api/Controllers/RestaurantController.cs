@@ -49,8 +49,8 @@ namespace Bite.Api.Controllers
                             id: 0,
                             restaurantId: 0,
                             dayOfWeek: dto.DayOfWeek,
-                            openTime: TimeSpan.Parse(dto.OpenTime),
-                            closeTime: TimeSpan.Parse(dto.CloseTime)
+                            openTime: dto.OpenTime,
+                            closeTime: dto.CloseTime
                         ));
                     }
                 }

@@ -80,6 +80,14 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         ) == 1;
     }
 
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        return await template.ExecuteAsync(
+            "delete from MenuCategory where restaurant_id=@restaurantId",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+    }
+
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
