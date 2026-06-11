@@ -19,6 +19,9 @@ USE BiteTestDb;
 GO
 
 -- 2. Delete existing tables (if any)
+DROP TABLE IF EXISTS OrderStatusToken;
+DROP TABLE IF EXISTS OrderItem;
+DROP TABLE IF EXISTS CustomerOrder;
 DROP TABLE IF EXISTS DeliveryFeeRule;
 DROP TABLE IF EXISTS DeliveryZone;
 DROP TABLE IF EXISTS MenuItemMenuCategory;
@@ -128,6 +131,52 @@ CREATE TABLE DeliveryFeeRule (
 );
 PRINT 'Table "DeliveryFeeRule" created.';
 
+CREATE TABLE CustomerOrder (
+    id            INT IDENTITY(1,1),
+    restaurant_id INT           NOT NULL,
+    address_id    INT           NOT NULL,
+    order_code    VARCHAR(16)   NOT NULL,
+    status        NVARCHAR(30)  NOT NULL,
+    created_at    DATETIME      DEFAULT GETDATE(),
+    updated_at    DATETIME      DEFAULT GETDATE(),
+    CONSTRAINT PK_CustomerOrder PRIMARY KEY (id),
+    CONSTRAINT UQ_CustomerOrder_OrderCode UNIQUE (order_code),
+    CONSTRAINT CK_CustomerOrder_Status CHECK (status IN (
+        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
+    )),
+    CONSTRAINT FK_CustomerOrder_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id),
+    CONSTRAINT FK_CustomerOrder_Address FOREIGN KEY (address_id) REFERENCES Address(id)
+);
+PRINT 'Table "CustomerOrder" created.';
+
+CREATE TABLE OrderItem (
+    id           INT IDENTITY(1,1),
+    order_id     INT NOT NULL,
+    menu_item_id INT NOT NULL,
+    quantity     INT NOT NULL CHECK(quantity > 0),
+    CONSTRAINT PK_OrderItem PRIMARY KEY (id),
+    CONSTRAINT FK_OrderItem_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE,
+    CONSTRAINT FK_OrderItem_MenuItem FOREIGN KEY (menu_item_id) REFERENCES MenuItem(id)
+);
+PRINT 'Table "OrderItem" created.';
+
+CREATE TABLE OrderStatusToken (
+    id            INT IDENTITY(1,1),
+    order_id      INT           NOT NULL,
+    token         VARCHAR(64)   NOT NULL,
+    target_status NVARCHAR(30)  NOT NULL,
+    used          BIT           NOT NULL DEFAULT 0,
+    expires_at    DATETIME      NOT NULL,
+    created_at    DATETIME      DEFAULT GETDATE(),
+    CONSTRAINT PK_OrderStatusToken PRIMARY KEY (id),
+    CONSTRAINT UQ_OrderStatusToken_Token UNIQUE (token),
+    CONSTRAINT CK_OrderStatusToken_TargetStatus CHECK (target_status IN (
+        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
+    )),
+    CONSTRAINT FK_OrderStatusToken_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE
+);
+PRINT 'Table "OrderStatusToken" created.';
+
 PRINT 'All tables created successfully.';
 GO
 
@@ -157,4 +206,17 @@ BEGIN
     WHERE id IN (SELECT id FROM inserted);
 END;
 PRINT 'Trigger "TR_MenuItem_UpdatedAt" created.';
+GO
+
+CREATE TRIGGER TR_CustomerOrder_UpdatedAt
+ON CustomerOrder
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE CustomerOrder
+    SET updated_at = GETDATE()
+    WHERE id IN (SELECT id FROM inserted);
+END;
+PRINT 'Trigger "TR_CustomerOrder_UpdatedAt" created.';
 GO
