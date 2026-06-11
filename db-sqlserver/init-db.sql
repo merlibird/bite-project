@@ -135,7 +135,7 @@ CREATE TABLE CustomerOrder (
     id            INT IDENTITY(1,1),
     restaurant_id INT           NOT NULL,
     address_id    INT           NOT NULL,
-    order_code    NVARCHAR(50)  NOT NULL,
+    order_code    VARCHAR(16)   NOT NULL,
     status        NVARCHAR(30)  NOT NULL,
     created_at    DATETIME      DEFAULT GETDATE(),
     updated_at    DATETIME      DEFAULT GETDATE(),
@@ -163,7 +163,7 @@ PRINT 'Table "OrderItem" created.';
 CREATE TABLE OrderStatusToken (
     id            INT IDENTITY(1,1),
     order_id      INT           NOT NULL,
-    token         NVARCHAR(255) NOT NULL,
+    token         VARCHAR(64)   NOT NULL,
     target_status NVARCHAR(30)  NOT NULL,
     used          BIT           NOT NULL DEFAULT 0,
     expires_at    DATETIME      NOT NULL,
