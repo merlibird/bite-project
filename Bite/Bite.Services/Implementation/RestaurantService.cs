@@ -1,13 +1,9 @@
 using Bite.Dal.Interface;
 using Bite.Domain;
-<<<<<<< HEAD
 using Bite.Services.Common;
 using Bite.Services.Interface;
 using System.Transactions;
 using Microsoft.AspNetCore.Hosting;
-=======
-using Bite.Services.Interface;
->>>>>>> feature/issue-48-get-restaurants
 
 namespace Bite.Services.Implementation;
 
@@ -15,8 +11,8 @@ public class RestaurantService(
     IRestaurantDao restaurantDao,
     IAddressDao addressDao,
     IOpeningHourSlotDao openingHourSlotDao,
-<<<<<<< HEAD
-    IApiKeyService apiKeyService) : IRestaurantService
+    IApiKeyService apiKeyService,
+    TimeProvider timeProvider) : IRestaurantService
 {
     //private const string ImageBaseDir = "wwwroot/images/restaurants";
 
@@ -33,7 +29,7 @@ public class RestaurantService(
         if (existing != null)
         {
             return ServiceResult<(int, string)>.Failure(
-                $"Restaurant '{restaurant.Name}' in city '{address.City}' already exists.", 
+                $"Restaurant '{restaurant.Name}' in city '{address.City}' already exists.",
                 ServiceResultType.Conflict);
         }
 
@@ -97,9 +93,8 @@ public class RestaurantService(
         scope.Complete();
 
         return ServiceResult<(int, string)>.Success((restaurantId, rawApiKey));
-=======
-    TimeProvider timeProvider) : IRestaurantService
-{
+    }
+
     public async Task<IReadOnlyCollection<(
         Restaurant Restaurant,
         Address Address,
@@ -214,6 +209,5 @@ public class RestaurantService(
     private static double ToRadians(double degrees)
     {
         return degrees * Math.PI / 180;
->>>>>>> feature/issue-48-get-restaurants
     }
 }

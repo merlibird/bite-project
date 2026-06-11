@@ -35,13 +35,9 @@ builder.Services.AddSingleton<IConnectionFactory>(_ =>
 
 // Services
 builder.Services.AddScoped<IMenuService, MenuService>();
-<<<<<<< HEAD
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IRestaurantService, RestaurantService>();
-=======
-builder.Services.AddScoped<IRestaurantService, RestaurantService>();
 builder.Services.AddSingleton(TimeProvider.System);
->>>>>>> feature/issue-48-get-restaurants
 
 // DAOs
 builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
@@ -49,14 +45,11 @@ builder.Services.AddScoped<IAddressDao, AddressDao>();
 builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
 builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
 builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
-builder.Services.AddScoped<IAddressDao, AddressDao>();
-builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-
     app.UseOpenApi();
     app.UseSwaggerUi(settings =>
     {
@@ -65,11 +58,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
