@@ -17,5 +17,6 @@ public enum ServiceResultType
     Success,
     Error,
     Conflict,
-    NotFound
+    NotFound,
+    Unauthorized
 }

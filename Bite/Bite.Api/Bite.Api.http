@@ -1,4 +1,5 @@
 @Bite.Api_HostAddress = http://localhost:5126
+@RestaurantApiKey = replace-with-api-key
 
 GET {{Bite.Api_HostAddress}}/api/restaurants/2/menu
 Accept: application/json
@@ -62,3 +63,48 @@ Content-Type: image/png
 ### Get Restaurants
 GET {{Bite.Api_HostAddress}}/api/restaurants?latitude=48.368368883920425&longitude=14.514449032326327&openNow=true&count=10
 Accept: application/json
+
+### Replace restaurant menu
+PUT {{Bite.Api_HostAddress}}/restaurants/2/menu
+Content-Type: application/json
+X-Api-Key: {{RestaurantApiKey}}
+
+{
+  "categories": [
+    {
+      "name": "Pizza",
+      "items": [
+        {
+          "name": "Margherita",
+          "description": "Tomaten, Kaese",
+          "price": 9.59
+        },
+        {
+          "name": "Al Tonno",
+          "description": "Tomaten, Kaese, Thunfisch, Zwiebel, Oliven",
+          "price": 11
+        },
+        {
+          "name": "Spinaci",
+          "description": "Tomaten, Kaese, Spinat, Feta",
+          "price": 10
+        }
+      ]
+    },
+    {
+      "name": "Pasta",
+      "items": [
+        {
+          "name": "Lasagne al Forno",
+          "description": "mit Rinderfaschiertem",
+          "price": 12
+        },
+        {
+          "name": "Spaghetti Frutti di Mare",
+          "description": "mit Meeresfruechten in Weissweinsauce",
+          "price": 14
+        }
+      ]
+    }
+  ]
+}

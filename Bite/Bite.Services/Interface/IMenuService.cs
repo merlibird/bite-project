@@ -1,11 +1,15 @@
-﻿using Bite.Domain;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Bite.Domain;
+using Bite.Services.Common;
 
 namespace Bite.Services.Interface;
+
 public interface IMenuService
 {
-    public Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default);
-}
+    Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default);
 
+    Task<ServiceResult<Menu>> UpdateMenuAsync(
+        int restaurantId,
+        Menu menu,
+        string apiKey,
+        CancellationToken cancellationToken = default);
+}
