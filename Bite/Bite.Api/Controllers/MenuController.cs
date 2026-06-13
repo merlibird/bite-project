@@ -8,7 +8,6 @@ namespace Bite.Api.Controllers;
 
 [ApiController]
 [Route("api/restaurants")]
-[Route("restaurants")]
 public class MenuController(IMenuService menuService) : ControllerBase
 {
     [HttpGet("{restaurantId:int}/menu")]
