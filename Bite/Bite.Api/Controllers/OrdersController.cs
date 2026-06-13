@@ -50,13 +50,41 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             restaurantId, 
             OrderStatusExtensions.FromDbValue(request.Status), 
             cancellationToken
-);
+        );
 
         if (!result.IsSuccess)
         {
             return result.ResultType switch
             {
                 ServiceResultType.NotFound or ServiceResultType.Forbidden => NotFound(new { message = $"No order found with code '{orderCode}'." }),
+                _ => BadRequest(new { message = result.ErrorMessage })
+            };
+        }
+
+        return Ok(new OrderStatusResponse
+        {
+            OrderCode = orderCode,
+            Status = result.Data.ToDbValue()
+        });
+    }
+
+    [ApiKeyAuth]
+    [HttpGet("{orderCode}/status-change/{token}")]
+    public async Task<IActionResult> ApplyStatusToken(
+        [FromRoute] string orderCode,
+        [FromRoute] string token,
+        CancellationToken cancellationToken)
+    {
+        int restaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
+
+        var result = await orderService.ApplyStatusTokenAsync(orderCode, token, restaurantId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result.ResultType switch
+            {
+                ServiceResultType.NotFound or ServiceResultType.Forbidden => NotFound(new { message = "No matching order or token found." }),
+                ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }

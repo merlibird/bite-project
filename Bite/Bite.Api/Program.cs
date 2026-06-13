@@ -46,6 +46,7 @@ builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
 builder.Services.AddScoped<IAddressDao, AddressDao>();
 builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
 builder.Services.AddScoped<ICustomerOrderDao, CustomerOrderDao>();
+builder.Services.AddScoped<IOrderStatusTokenDao, OrderStatusTokenDao>();
 
 var app = builder.Build();
 

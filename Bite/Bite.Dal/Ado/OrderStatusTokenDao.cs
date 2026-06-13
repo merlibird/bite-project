@@ -55,7 +55,7 @@ public class OrderStatusTokenDao(IConnectionFactory connectionFactory) : IOrderS
     public async Task<bool> MarkUsedAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
-            "update OrderStatusToken set used=1 where id=@id",
+            "update OrderStatusToken set used=1 where id=@id and used=0",
             [new QueryParameter("@id", id)],
             cancellationToken
         ) == 1;
