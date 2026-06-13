@@ -8,12 +8,12 @@ namespace Bite.Domain
         SentToRestaurant,
         InPreparation,
         OutForDelivery,
-        Delivered
+        Delivered,
+        Cancelled
     }
 
     public static class OrderStatusExtensions
     {
-        // Maps the enum to the exact codes stored in the database
         public static string ToDbValue(this OrderStatus status) => status switch
         {
             OrderStatus.Received => "RECEIVED",
@@ -21,6 +21,7 @@ namespace Bite.Domain
             OrderStatus.InPreparation => "IN_PREPARATION",
             OrderStatus.OutForDelivery => "OUT_FOR_DELIVERY",
             OrderStatus.Delivered => "DELIVERED",
+            OrderStatus.Cancelled => "CANCELLED",
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown order status.")
         };
 
@@ -31,7 +32,16 @@ namespace Bite.Domain
             "IN_PREPARATION" => OrderStatus.InPreparation,
             "OUT_FOR_DELIVERY" => OrderStatus.OutForDelivery,
             "DELIVERED" => OrderStatus.Delivered,
+            "CANCELLED" => OrderStatus.Cancelled,
             _ => throw new ArgumentException($"Unknown order status code: '{value}'.", nameof(value))
         };
+
+        public static bool IsValidOrderStatus(string value) => value is
+            "RECEIVED" or
+            "SENT_TO_RESTAURANT" or
+            "IN_PREPARATION" or
+            "OUT_FOR_DELIVERY" or
+            "DELIVERED" or
+            "CANCELLED";
     }
 }
