@@ -18,6 +18,6 @@ public enum ServiceResultType
     Error,
     Conflict,
     NotFound,
-    Forbidden
+    Forbidden,
     Unauthorized
 }
