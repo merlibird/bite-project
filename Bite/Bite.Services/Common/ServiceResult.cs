@@ -19,4 +19,5 @@ public enum ServiceResultType
     Conflict,
     NotFound,
     Forbidden
+    Unauthorized
 }

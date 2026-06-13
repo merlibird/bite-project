@@ -220,4 +220,22 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
         scope.Complete();
         return assignedCount == expectedCount;
     }
+
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        await template.ExecuteAsync(
+            "delete from MenuItemMenuCategory where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        int deletedItems = await template.ExecuteAsync(
+            "delete from MenuItem where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        scope.Complete();
+        return deletedItems;
+    }
 }

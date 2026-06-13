@@ -16,10 +16,3 @@ public class RegisterRestaurantRequest
     public string? OpeningHoursJson { get; set; } 
     public IFormFile? CoverImage { get; set; }
 }
-
-public class OpeningHourSlotDto
-{
-    public int DayOfWeek { get; set; }
-    public string OpenTime { get; set; } = string.Empty; // e.g., "11:00"
-    public string CloseTime { get; set; } = string.Empty; // e.g., "15:00"
-}
