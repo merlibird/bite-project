@@ -17,6 +17,8 @@ public class CustomerOrderDao(IConnectionFactory connectionFactory) : ICustomerO
             addressId: (int)row["address_id"],
             orderCode: (string)row["order_code"],
             status: OrderStatusExtensions.FromDbValue((string)row["status"]),
+            deliveryFee: (decimal)row["delivery_fee"],
+            total: (decimal)row["total"],
             createdAt: (DateTime)row["created_at"],
             updatedAt: (DateTime)row["updated_at"]);
     }
@@ -35,17 +37,19 @@ public class CustomerOrderDao(IConnectionFactory connectionFactory) : ICustomerO
         return await template.QuerySingleAsync(
             """
             insert into CustomerOrder
-            (restaurant_id, address_id, order_code, status)
+            (restaurant_id, address_id, order_code, status, delivery_fee, total)
             output inserted.id
             values
-            (@restaurantId, @addressId, @orderCode, @status)
+            (@restaurantId, @addressId, @orderCode, @status, @deliveryFee, @total)
             """,
             row => (int)row[0],
             [
             new QueryParameter("@restaurantId", order.RestaurantId),
             new QueryParameter("@addressId", order.AddressId),
             new QueryParameter("@orderCode", order.OrderCode),
-            new QueryParameter("@status", order.Status.ToDbValue())
+            new QueryParameter("@status", order.Status.ToDbValue()),
+            new QueryParameter("@deliveryFee", order.DeliveryFee),
+            new QueryParameter("@total", order.Total)
             ],
             cancellationToken);
     }
