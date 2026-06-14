@@ -128,4 +128,43 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             DeliveryFee = result.Data!.DeliveryFee
         });
     }
+
+    [HttpPost("/api/restaurants/{restaurantId}/orders")]
+    public async Task<IActionResult> PlaceOrder(
+        [FromRoute] int restaurantId,
+        [FromBody] PlaceOrderRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var address = new Address(
+            id: 0,
+            street: request.DeliveryAddress.Street,
+            number: request.DeliveryAddress.Number,
+            zipCode: request.DeliveryAddress.ZipCode,
+            city: request.DeliveryAddress.City,
+            country: request.DeliveryAddress.Country,
+            longitude: request.DeliveryAddress.Longitude,
+            latitude: request.DeliveryAddress.Latitude,
+            additionalInfo: request.DeliveryAddress.AdditionalInfo
+        );
+
+        var result = await orderService.PlaceOrderAsync(
+            restaurantId,
+            request.Items.Select(i => (i.MenuItemId, i.Quantity)),
+            address,
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result.ResultType switch
+            {
+                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                _ => BadRequest(new { message = result.ErrorMessage })
+            };
+        }
+
+        return CreatedAtAction(nameof(GetStatus), new { orderCode = result.Data }, new PlaceOrderResponseDto
+        {
+            OrderCode = result.Data!
+        });
+    }
 }
