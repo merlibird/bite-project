@@ -1,3 +1,4 @@
+using Bite.Api.Auth;
 using Bite.Api.Dtos;
 using Bite.Api.Dtos.Mappers;
 using Bite.Domain;
@@ -6,163 +7,105 @@ using Bite.Services.Interface;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 
-namespace Bite.Api.Controllers
+namespace Bite.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class RestaurantsController(IRestaurantService restaurantService, 
+    IWebHostEnvironment env) : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class RestaurantsController(IRestaurantService restaurantService, 
-        IWebHostEnvironment env) : ControllerBase
+    [HttpGet]
+    public async Task<ActionResult<RestaurantSearchResultDto>> SearchRestaurants(
+    [FromQuery, Range(-90, 90)] double latitude,
+    [FromQuery, Range(-180, 180)] double longitude,
+    [FromQuery] bool openNow = false,
+    [FromQuery, Range(1, 100)] int count = 10,
+    CancellationToken cancellationToken = default)
     {
-        [HttpGet]
-        public async Task<ActionResult<RestaurantSearchResultDto>> SearchRestaurants(
-        [FromQuery, Range(-90, 90)] double latitude,
-        [FromQuery, Range(-180, 180)] double longitude,
-        [FromQuery] bool openNow = false,
-        [FromQuery, Range(1, 100)] int count = 10,
-        CancellationToken cancellationToken = default)
-        {
-            var restaurants = await restaurantService.SearchRestaurantsAsync(
-                latitude,
-                longitude,
-                openNow,
-                count,
-                cancellationToken);
+        var restaurants = await restaurantService.SearchRestaurantsAsync(
+            latitude,
+            longitude,
+            openNow,
+            count,
+            cancellationToken);
 
-            return Ok(restaurants.ToRestaurantSearchResultDto(latitude, longitude, openNow, count));
+        return Ok(restaurants.ToRestaurantSearchResultDto(latitude, longitude, openNow, count));
+    }
+
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Register([FromForm] RegisterRestaurantRequest request, CancellationToken cancellationToken)
+    {
+        var (restaurant, address, openingHours) = request.ToDomain();
+
+        Stream? imageStream = request.CoverImage?.OpenReadStream();
+        if (imageStream != null && imageStream.CanSeek)
+        {
+            imageStream.Position = 0;
+        }
+        string? imageExtension = request.CoverImage != null ? Path.GetExtension(request.CoverImage.FileName) : null;
+
+        var result = await restaurantService.RegisterAsync(
+            restaurant,
+            address,
+            openingHours,
+            imageStream,
+            imageExtension,
+            env.WebRootPath,
+            cancellationToken
+        );
+
+        if (!result.IsSuccess)
+        {
+            return result.ResultType switch
+            {
+                ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
+                _ => BadRequest(new { message = result.ErrorMessage })
+            };
         }
 
-        [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Register([FromForm] RegisterRestaurantRequest request, CancellationToken cancellationToken)
+        var (restaurantId, rawApiKey) = result.Data;
+
+        return CreatedAtAction(null, new RegisterRestaurantResponse
         {
-            var address = new Address(
-                id: 0,
-                street: request.Street,
-                number: request.Number,
-                zipCode: request.ZipCode,
-                city: request.City,
-                country: request.Country,
-                longitude: request.Longitude,
-                latitude: request.Latitude
-            );
+            RestaurantId = restaurantId,
+            ApiKey = rawApiKey
+        });
+    }
 
-            var restaurant = new Restaurant(
-                id: 0,
-                name: request.Name,
-                addressId: 0,
-                webhookUrl: request.WebhookUrl,
-                apiKey: string.Empty
-            );
+    [ApiKeyAuth]
+    [HttpPut("{id}/delivery-conditions")]
+    public async Task<IActionResult> UpdateDeliveryConditions(
+        int id,
+        [FromBody] List<DeliveryZoneDto> request,
+        CancellationToken cancellationToken)
+    {
+        int authenticatedRestaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
 
-            var openingHours = new List<OpeningHourSlot>();
-            if (!string.IsNullOrEmpty(request.OpeningHoursJson))
-            {
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var dtos = JsonSerializer.Deserialize<List<OpeningHourSlotDto>>(request.OpeningHoursJson, options);
-                if (dtos != null)
-                {
-                    foreach (var dto in dtos)
-                    {
-                        openingHours.Add(new OpeningHourSlot(
-                            id: 0,
-                            restaurantId: 0,
-                            dayOfWeek: dto.DayOfWeek,
-                            openTime: dto.OpenTime,
-                            closeTime: dto.CloseTime
-                        ));
-                    }
-                }
-            }
-
-            Stream? imageStream = request.CoverImage?.OpenReadStream();
-            if (imageStream != null && imageStream.CanSeek)
-            {
-                imageStream.Position = 0;
-            }
-            string? imageExtension = request.CoverImage != null ? Path.GetExtension(request.CoverImage.FileName) : null;
-
-            var result = await restaurantService.RegisterAsync(
-                restaurant,
-                address,
-                openingHours,
-                imageStream,
-                imageExtension,
-                env.WebRootPath,
-                cancellationToken
-            );
-
-            if (!result.IsSuccess)
-            {
-                return result.ResultType switch
-                {
-                    ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
-                    _ => BadRequest(new { message = result.ErrorMessage })
-                };
-            }
-
-            var (restaurantId, rawApiKey) = result.Data;
-
-            return CreatedAtAction(null, new RegisterRestaurantResponse
-            {
-                RestaurantId = restaurantId,
-                ApiKey = rawApiKey
-            });
+        if (id != authenticatedRestaurantId)
+        {
+            return Forbid();
         }
 
-        [HttpPut("{id}/delivery-conditions")]
-        public async Task<IActionResult> UpdateDeliveryConditions(
-            int id,
-            [FromBody] List<DeliveryZoneDto> request,
-            [FromHeader(Name = "X-Api-Key")] string? apiKey,
-            CancellationToken cancellationToken)
+        var (deliveryZones, feeRules) = request.ToDomain(id);
+
+        var result = await restaurantService.UpdateDeliveryConditionsAsync(
+            id,
+            deliveryZones,
+            feeRules,
+            cancellationToken);
+
+        if (!result.IsSuccess)
         {
-            var deliveryZones = new List<DeliveryZone>();
-            var feeRules = new List<DeliveryFeeRule>();
-
-            // Temporary ID to link zones and rules before DB insertion
-            int tempZoneId = 1;
-
-            foreach (var zoneDto in request)
+            return result.ResultType switch
             {
-                deliveryZones.Add(new DeliveryZone(
-                    id: tempZoneId,
-                    restaurantId: id,
-                    minOrderValue: zoneDto.MinOrderValue,
-                    maxDistance: zoneDto.MaxDistance
-                ));
-
-                foreach (var ruleDto in zoneDto.FeeRules)
-                {
-                    feeRules.Add(new DeliveryFeeRule(
-                        id: 0,
-                        deliveryZoneId: tempZoneId,
-                        maxOrderValue: ruleDto.MaxOrderValue,
-                        deliveryFee: ruleDto.DeliveryFee
-                    ));
-                }
-                tempZoneId++;
-            }
-
-            var result = await restaurantService.UpdateDeliveryConditionsAsync(
-                id,
-                deliveryZones,
-                feeRules,
-                apiKey ?? string.Empty,
-                cancellationToken);
-
-            if (!result.IsSuccess)
-            {
-                return result.ResultType switch
-                {
-                    ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                    ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
-                    _ => BadRequest(new { message = result.ErrorMessage })
-                };
-            }
-
-            return NoContent();
+                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
+                _ => BadRequest(new { message = result.ErrorMessage })
+            };
         }
+
+        return NoContent();
     }
 }

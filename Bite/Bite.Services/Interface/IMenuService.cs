@@ -10,6 +10,5 @@ public interface IMenuService
     Task<ServiceResult<Menu>> UpdateMenuAsync(
         int restaurantId,
         Menu menu,
-        string apiKey,
         CancellationToken cancellationToken = default);
 }

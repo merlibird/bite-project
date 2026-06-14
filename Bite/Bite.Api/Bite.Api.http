@@ -108,3 +108,34 @@ X-Api-Key: {{RestaurantApiKey}}
     }
   ]
 }
+###
+PUT {{Bite.Api_HostAddress}}/api/restaurants/2/delivery-conditions
+X-Api-Key: {{RestaurantApiKey}}
+Content-Type: application/json
+
+[
+  {
+    "maxDistance": 10.0,
+    "minOrderValue": 20.0,
+    "feeRules": [
+      {
+        "maxOrderValue": 0.0,
+        "deliveryFee": 0.0
+      }
+    ]
+  },
+  {
+    "maxDistance": 1000.0,
+    "minOrderValue": 20.0,
+    "feeRules": [
+      {
+        "maxOrderValue": 30.0,
+        "deliveryFee": 5.0
+      },
+      {
+        "maxOrderValue": 0.0,
+        "deliveryFee": 0.0
+      }
+    ]
+  }
+]

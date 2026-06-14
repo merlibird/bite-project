@@ -22,19 +22,12 @@ public class RestaurantService(
         int restaurantId,
         IEnumerable<DeliveryZone> deliveryZones,
         IEnumerable<DeliveryFeeRule> feeRules,
-        string apiKey,
         CancellationToken cancellationToken = default)
     {
         var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
         if (restaurant is null)
         {
             return ServiceResult<bool>.Failure("Restaurant not found.", ServiceResultType.NotFound);
-        }
-
-        if (string.IsNullOrWhiteSpace(apiKey) ||
-            !string.Equals(restaurant.ApiKey, apiKeyService.HashApiKey(apiKey), StringComparison.Ordinal))
-        {
-            return ServiceResult<bool>.Failure("Invalid API key.", ServiceResultType.Unauthorized);
         }
 
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
