@@ -12,7 +12,7 @@
 
 * Put: `/restaurants/{id}/delivery-conditions`
 
-  (erstellen und updaten der lieferbedingungen)
+  (erstellen und updaten der lieferbedingungen, realisieren von Upsert)
 
 ## 4
 

@@ -43,6 +43,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
 builder.Services.AddScoped<IAddressDao, AddressDao>();
 builder.Services.AddScoped<IOpeningHourSlotDao, OpeningHourSlotDao>();
+builder.Services.AddScoped<IDeliveryZoneDao, DeliveryZoneDao>();
+builder.Services.AddScoped<IDeliveryFeeRuleDao, DeliveryFeeRuleDao>();
 builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
 builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
 
