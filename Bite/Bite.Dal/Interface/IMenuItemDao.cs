@@ -8,6 +8,8 @@ public interface IMenuItemDao
 {
     Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default);
 
+    Task<MenuItem?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
+
     Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId, CancellationToken cancellationToken = default);

@@ -10,4 +10,8 @@ public interface IOrderService
     Task<ServiceResult<OrderStatus>> ChangeStatusAsync(string orderCode, int restaurantId, OrderStatus newStatus, CancellationToken cancellationToken = default);
 
     Task<ServiceResult<OrderStatus>> ApplyStatusTokenAsync(string orderCode, string token, int restaurantId, CancellationToken cancellationToken = default);
+
+    Task<ServiceResult<OrderPriceResponse>> CalculatePriceAsync(int restaurantId, IEnumerable<(int MenuItemId, int Quantity)> items, (double Latitude, double Longitude) deliveryLocation, CancellationToken cancellationToken = default);
 }
+
+public record OrderPriceResponse(decimal Subtotal, decimal DeliveryFee, decimal TotalPrice);

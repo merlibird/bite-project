@@ -79,6 +79,19 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             cancellationToken);
     }
 
+    public async Task<MenuItem?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await template.QuerySingleAsync(
+            $"""
+            {MenuItemSelect}
+            where mi.id = @id
+            {MenuItemGroupBy}
+            """,
+            MapRowToMenuItem,
+            [new QueryParameter("@id", id)],
+            cancellationToken);
+    }
+
     public async Task<IEnumerable<MenuItem>> FindAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.QueryAsync(
