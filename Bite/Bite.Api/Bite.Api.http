@@ -139,3 +139,30 @@ Content-Type: application/json
     ]
   }
 ]
+
+### Calculate order price
+POST {{Bite.Api_HostAddress}}/api/restaurants/2/orders/price
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 2
+    }
+  ],
+  "deliveryAddress": {
+    "street": "Softwarepark",
+    "number": "23",
+    "zipCode": "4232",
+    "city": "Hagenberg",
+    "country": "Austria",
+    "latitude": 48.3692673,
+    "longitude": 14.5125979,
+    "additionalInfo": "Zimmer 404"
+  }
+}

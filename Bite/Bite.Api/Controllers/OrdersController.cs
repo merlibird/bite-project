@@ -95,4 +95,37 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             Status = result.Data.ToDbValue()
         });
     }
+
+    //warum wollten wir das über restaurants haben?
+    //Weil es einfacher ist, die Berechtigungen zu überprüfen,
+    //wenn die Restaurant-ID in der URL enthalten ist? So können
+    //wir sicherstellen, dass nur berechtigte Restaurants den Status
+    //ihrer eigenen Bestellungen ändern können????
+    [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
+    public async Task<IActionResult> CalculatePrice(
+        [FromRoute] int restaurantId,
+        [FromBody] OrderPriceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await orderService.CalculatePriceAsync(
+            restaurantId,
+            request.Items.Select(i => (i.MenuItemId, i.Quantity)),
+            (request.DeliveryAddress.Latitude, request.DeliveryAddress.Longitude),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result.ResultType switch
+            {
+                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                _ => BadRequest(new { message = result.ErrorMessage })
+            };
+        }
+
+        return Ok(new OrderPriceResponseDto
+        {
+            Subtotal = result.Data!.Subtotal,
+            DeliveryFee = result.Data!.DeliveryFee
+        });
+    }
 }
