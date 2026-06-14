@@ -15,4 +15,6 @@ public interface IDeliveryZoneDao
     Task<bool> UpdateAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 }

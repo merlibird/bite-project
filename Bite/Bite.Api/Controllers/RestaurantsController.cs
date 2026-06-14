@@ -110,5 +110,59 @@ namespace Bite.Api.Controllers
                 ApiKey = rawApiKey
             });
         }
+
+        [HttpPut("{id}/delivery-conditions")]
+        public async Task<IActionResult> UpdateDeliveryConditions(
+            int id,
+            [FromBody] List<DeliveryZoneDto> request,
+            [FromHeader(Name = "X-Api-Key")] string? apiKey,
+            CancellationToken cancellationToken)
+        {
+            var deliveryZones = new List<DeliveryZone>();
+            var feeRules = new List<DeliveryFeeRule>();
+
+            // Temporary ID to link zones and rules before DB insertion
+            int tempZoneId = 1;
+
+            foreach (var zoneDto in request)
+            {
+                deliveryZones.Add(new DeliveryZone(
+                    id: tempZoneId,
+                    restaurantId: id,
+                    minOrderValue: zoneDto.MinOrderValue,
+                    maxDistance: zoneDto.MaxDistance
+                ));
+
+                foreach (var ruleDto in zoneDto.FeeRules)
+                {
+                    feeRules.Add(new DeliveryFeeRule(
+                        id: 0,
+                        deliveryZoneId: tempZoneId,
+                        maxOrderValue: ruleDto.MaxOrderValue,
+                        deliveryFee: ruleDto.DeliveryFee
+                    ));
+                }
+                tempZoneId++;
+            }
+
+            var result = await restaurantService.UpdateDeliveryConditionsAsync(
+                id,
+                deliveryZones,
+                feeRules,
+                apiKey ?? string.Empty,
+                cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return result.ResultType switch
+                {
+                    ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                    ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
+                    _ => BadRequest(new { message = result.ErrorMessage })
+                };
+            }
+
+            return NoContent();
+        }
     }
 }

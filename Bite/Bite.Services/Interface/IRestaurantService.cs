@@ -29,4 +29,11 @@ public interface IRestaurantService
         bool openNowOnly,
         int count,
         CancellationToken cancellationToken = default);
-}
+
+        Task<ServiceResult<bool>> UpdateDeliveryConditionsAsync(
+        int restaurantId,
+        IEnumerable<DeliveryZone> deliveryZones,
+        IEnumerable<DeliveryFeeRule> feeRules,
+        string apiKey,
+        CancellationToken cancellationToken = default);
+        }
