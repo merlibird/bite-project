@@ -137,12 +137,14 @@ CREATE TABLE CustomerOrder (
     address_id    INT           NOT NULL,
     order_code    VARCHAR(16)   NOT NULL,
     status        NVARCHAR(30)  NOT NULL,
+    delivery_fee  DECIMAL(10,2) NOT NULL CHECK(delivery_fee >= 0),
+    total         DECIMAL(10,2) NOT NULL CHECK(total >= 0),
     created_at    DATETIME      DEFAULT GETDATE(),
     updated_at    DATETIME      DEFAULT GETDATE(),
     CONSTRAINT PK_CustomerOrder PRIMARY KEY (id),
     CONSTRAINT UQ_CustomerOrder_OrderCode UNIQUE (order_code),
     CONSTRAINT CK_CustomerOrder_Status CHECK (status IN (
-        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
+        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'
     )),
     CONSTRAINT FK_CustomerOrder_Restaurant FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id),
     CONSTRAINT FK_CustomerOrder_Address FOREIGN KEY (address_id) REFERENCES Address(id)
@@ -151,9 +153,10 @@ PRINT 'Table "CustomerOrder" created.';
 
 CREATE TABLE OrderItem (
     id           INT IDENTITY(1,1),
-    order_id     INT NOT NULL,
-    menu_item_id INT NOT NULL,
-    quantity     INT NOT NULL CHECK(quantity > 0),
+    order_id     INT           NOT NULL,
+    menu_item_id INT           NOT NULL,
+    quantity     INT           NOT NULL CHECK(quantity > 0),
+    unit_price   DECIMAL(10,2) NOT NULL CHECK(unit_price >= 0),
     CONSTRAINT PK_OrderItem PRIMARY KEY (id),
     CONSTRAINT FK_OrderItem_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE,
     CONSTRAINT FK_OrderItem_MenuItem FOREIGN KEY (menu_item_id) REFERENCES MenuItem(id)
@@ -171,7 +174,7 @@ CREATE TABLE OrderStatusToken (
     CONSTRAINT PK_OrderStatusToken PRIMARY KEY (id),
     CONSTRAINT UQ_OrderStatusToken_Token UNIQUE (token),
     CONSTRAINT CK_OrderStatusToken_TargetStatus CHECK (target_status IN (
-        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED'
+        'RECEIVED', 'SENT_TO_RESTAURANT', 'IN_PREPARATION', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'
     )),
     CONSTRAINT FK_OrderStatusToken_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE
 );

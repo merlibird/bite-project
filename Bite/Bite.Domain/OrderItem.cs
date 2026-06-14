@@ -8,14 +8,16 @@ namespace Bite.Domain
         int id,
         int orderId,
         int menuItemId,
-        int quantity)
+        int quantity,
+        decimal unitPrice)
     {
         public int Id { get; init; } = id;
         public int OrderId { get; init; } = orderId;
         public int MenuItemId { get; init; } = menuItemId;
         public int Quantity { get; set; } = quantity;
+        public decimal UnitPrice { get; init; } = unitPrice;
 
         public override string ToString() =>
-            $"OrderItem {Id}: OrderId: {OrderId}, MenuItemId: {MenuItemId}, Quantity: {Quantity}";
+            $"OrderItem {Id}: OrderId: {OrderId}, MenuItemId: {MenuItemId}, Quantity: {Quantity}, UnitPrice: {UnitPrice}";
     }
 }
