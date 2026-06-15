@@ -8,7 +8,14 @@ namespace Bite.Services.Implementation;
 
 public class OrderService(
     ICustomerOrderDao customerOrderDao,
-    IOrderStatusTokenDao orderStatusTokenDao) : IOrderService
+    IOrderStatusTokenDao orderStatusTokenDao,
+    IRestaurantDao restaurantDao,
+    IAddressDao addressDao,
+    IMenuItemDao menuItemDao,
+    IDeliveryZoneDao deliveryZoneDao,
+    IDeliveryFeeRuleDao deliveryFeeRuleDao,
+    IOrderCodeService orderCodeService,
+    IOrderItemDao orderItemDao) : IOrderService
 {
     public async Task<ServiceResult<OrderStatus>> GetStatusAsync(string orderCode, CancellationToken cancellationToken = default)
     {
@@ -107,5 +114,165 @@ public class OrderService(
         scope.Complete();
 
         return ServiceResult<OrderStatus>.Success(statusToken.TargetStatus);
+    }
+
+    public async Task<ServiceResult<OrderPriceResponse>> CalculatePriceAsync(
+        int restaurantId,
+        IEnumerable<(int MenuItemId, int Quantity)> items,
+        (double Latitude, double Longitude) deliveryLocation,
+        CancellationToken cancellationToken = default)
+    {
+        var validationResult = await ValidateOrderAsync(restaurantId, items, deliveryLocation, cancellationToken);
+        if (!validationResult.IsSuccess)
+        {
+            return ServiceResult<OrderPriceResponse>.Failure(validationResult.ErrorMessage!, validationResult.ResultType);
+        }
+
+        var (subtotal, deliveryFee, _) = validationResult.Data;
+        return ServiceResult<OrderPriceResponse>.Success(new OrderPriceResponse(subtotal, deliveryFee, subtotal + deliveryFee));
+    }
+
+    public async Task<ServiceResult<string>> PlaceOrderAsync(
+        int restaurantId,
+        IEnumerable<(int MenuItemId, int Quantity)> items,
+        Address deliveryAddress,
+        CancellationToken cancellationToken = default)
+    {
+        var validationResult = await ValidateOrderAsync(
+            restaurantId,
+            items,
+            (deliveryAddress.Latitude, deliveryAddress.Longitude),
+            cancellationToken);
+
+        if (!validationResult.IsSuccess)
+        {
+            return ServiceResult<string>.Failure(validationResult.ErrorMessage!, validationResult.ResultType);
+        }
+
+        var (subtotal, deliveryFee, validatedItems) = validationResult.Data;
+
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        // 1. Insert Address
+        int addressId = await addressDao.InsertAsync(deliveryAddress, cancellationToken);
+
+        // 2. Generate Order Code
+        string orderCode = orderCodeService.GenerateOrderCode();
+
+        // 3. Insert Order
+        var order = new CustomerOrder(
+            id: 0,
+            restaurantId: restaurantId,
+            addressId: addressId,
+            orderCode: orderCode,
+            status: OrderStatus.Received,
+            deliveryFee: deliveryFee,
+            total: subtotal + deliveryFee
+        );
+
+        int orderId = await customerOrderDao.InsertAsync(order, cancellationToken);
+
+        // 4. Insert Order Items
+        foreach (var item in validatedItems)
+        {
+            var orderItem = new OrderItem(
+                id: 0,
+                orderId: orderId,
+                menuItemId: item.MenuItem.Id,
+                quantity: item.Quantity,
+                unitPrice: item.MenuItem.Price
+            );
+            await orderItemDao.InsertAsync(orderItem, cancellationToken);
+        }
+
+        scope.Complete();
+
+        return ServiceResult<string>.Success(orderCode);
+    }
+
+    private async Task<ServiceResult<(decimal Subtotal, decimal DeliveryFee, List<(MenuItem MenuItem, int Quantity)> ValidatedItems)>> ValidateOrderAsync(
+        int restaurantId,
+        IEnumerable<(int MenuItemId, int Quantity)> items,
+        (double Latitude, double Longitude) deliveryLocation,
+        CancellationToken cancellationToken)
+    {
+        var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
+        if (restaurant is null)
+        {
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Restaurant not found.", ServiceResultType.NotFound);
+        }
+
+        var restaurantAddress = await addressDao.FindByIdAsync(restaurant.AddressId, cancellationToken);
+        if (restaurantAddress is null)
+        {
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Restaurant address not found.", ServiceResultType.Error);
+        }
+
+        decimal subtotal = 0;
+        var validatedItems = new List<(MenuItem MenuItem, int Quantity)>();
+
+        foreach (var itemRequest in items)
+        {
+            var menuItem = await menuItemDao.FindByIdAsync(itemRequest.MenuItemId, cancellationToken);
+            if (menuItem is null || menuItem.RestaurantId != restaurantId || !menuItem.IsActive)
+            {
+                return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure($"Invalid or inactive menu item: {itemRequest.MenuItemId}", ServiceResultType.Error);
+            }
+            subtotal += menuItem.Price * itemRequest.Quantity;
+            validatedItems.Add((menuItem, itemRequest.Quantity));
+        }
+
+        if (validatedItems.Count == 0)
+        {
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Order must contain at least one item.", ServiceResultType.Error);
+        }
+
+        double distance = GeoUtils.CalculateDistanceInKm(
+            restaurantAddress.Latitude,
+            restaurantAddress.Longitude,
+            deliveryLocation.Latitude,
+            deliveryLocation.Longitude);
+
+        var zones = (await deliveryZoneDao.FindByRestaurantIdAsync(restaurantId, cancellationToken))
+            .Where(z => distance <= z.MaxDistance)
+            .OrderBy(z => z.MaxDistance)
+            .ToList();
+
+        if (zones.Count == 0)
+        {
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Outside delivery area.", ServiceResultType.ValidationError);
+        }
+
+        var validZone = zones.FirstOrDefault(z => subtotal >= z.MinOrderValue);
+        if (validZone is null)
+        {
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Minimum order value not reached.", ServiceResultType.ValidationError);
+        }
+
+        var rules = (await deliveryFeeRuleDao.FindByRestaurantIdAndZoneIdAsync(restaurantId, validZone.Id, cancellationToken))
+            .OrderBy(r => r.MaxOrderValue)
+            .ToList();
+
+        if (rules.Count == 0)
+        {
+            // If a zone exists but no rules are defined, it's considered non-deliverable
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery rules defined for this area.", ServiceResultType.ValidationError);
+        }
+
+        decimal deliveryFee = 0;
+        var applicableRule = rules.FirstOrDefault(r => subtotal <= r.MaxOrderValue);
+
+        if (applicableRule is not null)
+        {
+            deliveryFee = applicableRule.DeliveryFee;
+        }
+        else if (rules.Count > 0)
+        {
+            // Fallback: If subtotal > all MaxOrderValues, default to 0.
+            // TODO: Discuss fallback logic further.
+            deliveryFee = 0;
+        }
+
+        return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Success((subtotal, deliveryFee, validatedItems));
     }
 }

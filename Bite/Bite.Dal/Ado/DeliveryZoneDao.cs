@@ -78,4 +78,15 @@ public class DeliveryZoneDao(IConnectionFactory connectionFactory) : IDeliveryZo
             cancellationToken
         ) == 1;
     }
+
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        return await template.ExecuteAsync(
+            "delete from DeliveryZone where restaurant_id=@restaurantId",
+            [
+            new QueryParameter("@restaurantId", restaurantId)
+            ],
+            cancellationToken
+        );
+    }
 }

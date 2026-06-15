@@ -6,25 +6,11 @@ using System.Transactions;
 
 namespace Bite.Services.Implementation;
 
-public class MenuService : IMenuService
+public class MenuService(
+    IRestaurantDao restaurantDao,
+    IMenuCategoryDao menuCategoryDao,
+    IMenuItemDao menuItemDao) : IMenuService
 {
-    private readonly IRestaurantDao restaurantDao;
-    private readonly IMenuCategoryDao menuCategoryDao;
-    private readonly IMenuItemDao menuItemDao;
-    private readonly IApiKeyService apiKeyService;
-
-    public MenuService(
-        IRestaurantDao restaurantDao,
-        IMenuCategoryDao menuCategoryDao,
-        IMenuItemDao menuItemDao,
-        IApiKeyService apiKeyService)
-    {
-        this.restaurantDao = restaurantDao;
-        this.menuCategoryDao = menuCategoryDao;
-        this.menuItemDao = menuItemDao;
-        this.apiKeyService = apiKeyService;
-    }
-
     public async Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
@@ -53,7 +39,6 @@ public class MenuService : IMenuService
     public async Task<ServiceResult<Menu>> UpdateMenuAsync(
         int restaurantId,
         Menu menu,
-        string apiKey,
         CancellationToken cancellationToken = default)
     {
         var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
@@ -62,50 +47,42 @@ public class MenuService : IMenuService
             return ServiceResult<Menu>.Failure("Restaurant not found.", ServiceResultType.NotFound);
         }
 
-        if (string.IsNullOrWhiteSpace(apiKey) ||
-            !string.Equals(restaurant.ApiKey, apiKeyService.HashApiKey(apiKey), StringComparison.Ordinal))
-        {
-            return ServiceResult<Menu>.Failure("Invalid API key.", ServiceResultType.Unauthorized);
-        }
-
         var validationError = ValidateMenu(menu);
         if (validationError is not null)
         {
             return ServiceResult<Menu>.Failure(validationError);
         }
 
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        await menuItemDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
+        await menuCategoryDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
+
+        foreach (var category in menu.Categories)
         {
-            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            int categoryId = await menuCategoryDao.InsertAsync(
+                new MenuCategory(
+                    id: 0,
+                    restaurantId: restaurantId,
+                    name: category.Name.Trim()),
+                cancellationToken);
 
-            await menuItemDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-            await menuCategoryDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-
-            foreach (var category in menu.Categories)
+            foreach (var item in category.Items)
             {
-                int categoryId = await menuCategoryDao.InsertAsync(
-                    new MenuCategory(
+                await menuItemDao.InsertAsync(
+                    new MenuItem(
                         id: 0,
                         restaurantId: restaurantId,
-                        name: category.Name.Trim()),
+                        name: item.Name.Trim(),
+                        description: string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
+                        price: item.Price,
+                        isActive: item.IsActive,
+                        menuCategoryIds: [categoryId]),
                     cancellationToken);
-
-                foreach (var item in category.Items)
-                {
-                    await menuItemDao.InsertAsync(
-                        new MenuItem(
-                            id: 0,
-                            restaurantId: restaurantId,
-                            name: item.Name.Trim(),
-                            description: string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
-                            price: item.Price,
-                            isActive: item.IsActive,
-                            menuCategoryIds: [categoryId]),
-                        cancellationToken);
-                }
             }
-
-            scope.Complete();
         }
+
+        scope.Complete();
 
         var updatedMenu = await GetMenuAsync(restaurantId, cancellationToken);
         return ServiceResult<Menu>.Success(updatedMenu!);

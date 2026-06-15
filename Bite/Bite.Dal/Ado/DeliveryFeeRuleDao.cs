@@ -98,4 +98,19 @@ public class DeliveryFeeRuleDao(IConnectionFactory connectionFactory) : IDeliver
             cancellationToken
         ) == 1;
     }
+
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        return await template.ExecuteAsync(
+            """
+            delete dfr from DeliveryFeeRule dfr
+            join DeliveryZone dz on dz.id = dfr.delivery_zone_id
+            where dz.restaurant_id=@restaurantId
+            """,
+            [
+            new QueryParameter("@restaurantId", restaurantId)
+            ],
+            cancellationToken
+        );
+    }
 }

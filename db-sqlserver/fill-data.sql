@@ -35,7 +35,7 @@ VALUES ('Softwarepark', '11', '4232', 'Hagenberg', 'Austria', 14.5144, 48.3684);
 SET @addrNimmersatt = SCOPE_IDENTITY();
 
 INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
-VALUES ('Restaurant Nimmersatt', @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png', 'DUMMY_KEY_NIMMERSATT_12345');
+VALUES ('Restaurant Nimmersatt', @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png', 'DUMMY_KEY_NIMMERSATT_12345');    
 SET @restNimmersatt = SCOPE_IDENTITY();
 
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Pizza');
@@ -262,6 +262,114 @@ SET @zone2Sakura = SCOPE_IDENTITY();
 INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone2Sakura, 9999.00, 5.90);
 
 PRINT 'Restaurant Sakura Sushi inserted.';
+
+-- ============================================================
+-- 4. Create 20 Implicit Students (Addresses)
+-- ============================================================
+DECLARE @studentId INT = 1;
+DECLARE @studentBaseLat FLOAT = 48.3692;
+DECLARE @studentBaseLon FLOAT = 14.5125;
+
+WHILE @studentId <= 20
+BEGIN
+    INSERT INTO Address (street, number, zip_code, city, country, longitude, latitude, additional_info)
+    VALUES (
+        'Softwarepark', 
+        CAST((20 + @studentId) AS NVARCHAR(10)), 
+        '4232', 
+        'Hagenberg', 
+        'Austria', 
+        @studentBaseLon + (RAND() * 0.005), 
+        @studentBaseLat + (RAND() * 0.005), 
+        'Zimmer ' + CAST((400 + @studentId) AS NVARCHAR(10))
+    );
+    SET @studentId = @studentId + 1;
+END
+
+PRINT '20 Student addresses inserted.';
+
+-- ============================================================
+-- 5. Create 30 Randomized Orders
+-- ============================================================
+DECLARE @orderCounter INT = 1;
+DECLARE @targetRestaurantId INT;
+DECLARE @targetAddressId INT;
+DECLARE @randomStatus INT;
+DECLARE @statusString NVARCHAR(30);
+DECLARE @itemCount INT;
+DECLARE @itemIter INT;
+DECLARE @randomMenuItemId INT;
+DECLARE @randomQuantity INT;
+DECLARE @itemPrice DECIMAL(10,2);
+DECLARE @orderSubtotal DECIMAL(10,2);
+DECLARE @deliveryFee DECIMAL(10,2);
+DECLARE @orderCode VARCHAR(16);
+
+-- Wir speichern die IDs der 20 zuletzt angelegten Adressen in einer temp Tabelle
+DECLARE @StudentAddresses TABLE (Id INT IDENTITY(1,1), AddressId INT);
+INSERT INTO @StudentAddresses (AddressId)
+SELECT TOP 20 id FROM Address ORDER BY id DESC;
+
+WHILE @orderCounter <= 30
+BEGIN
+    -- 1. Zufälliges Restaurant (1 bis 3)
+    SET @targetRestaurantId = (CAST(RAND() * 3 AS INT) % 3) + 1;
+    
+    -- 2. Zufällige Studierenden-Adresse (1 bis 20)
+    SELECT @targetAddressId = AddressId FROM @StudentAddresses WHERE Id = (CAST(RAND() * 20 AS INT) % 20) + 1;
+
+    -- 3. Zufälliger Status (0 bis 5)
+    SET @randomStatus = CAST(RAND() * 6 AS INT) % 6;
+    SET @statusString = CASE @randomStatus
+        WHEN 0 THEN 'RECEIVED'
+        WHEN 1 THEN 'SENT_TO_RESTAURANT'
+        WHEN 2 THEN 'IN_PREPARATION'
+        WHEN 3 THEN 'OUT_FOR_DELIVERY'
+        WHEN 4 THEN 'DELIVERED'
+        ELSE 'CANCELLED'
+    END;
+
+    -- 4. Bestellcode generieren (Simuliert 8 Zeichen)
+    SET @orderCode = SUBSTRING(REPLACE(NEWID(), '-', ''), 1, 8);
+
+    -- 5. Vorerst leere Bestellung anlegen
+    SET @deliveryFee = 2.99; -- Dummy Fee für Testdaten
+    INSERT INTO CustomerOrder (restaurant_id, address_id, order_code, status, delivery_fee, total)
+    VALUES (@targetRestaurantId, @targetAddressId, @orderCode, @statusString, @deliveryFee, 0);
+    
+    DECLARE @currentOrderId INT = SCOPE_IDENTITY();
+    SET @orderSubtotal = 0;
+
+    -- 6. 1 bis 3 zufällige Items hinzufügen
+    SET @itemCount = (CAST(RAND() * 3 AS INT) % 3) + 1;
+    SET @itemIter = 1;
+
+    WHILE @itemIter <= @itemCount
+    BEGIN
+        -- Zufälliges MenuItem des Restaurants holen
+        SELECT TOP 1 @randomMenuItemId = id, @itemPrice = price 
+        FROM MenuItem 
+        WHERE restaurant_id = @targetRestaurantId 
+        ORDER BY NEWID();
+
+        SET @randomQuantity = (CAST(RAND() * 2 AS INT) % 2) + 1; -- 1 oder 2 Stück
+
+        INSERT INTO OrderItem (order_id, menu_item_id, quantity, unit_price)
+        VALUES (@currentOrderId, @randomMenuItemId, @randomQuantity, @itemPrice);
+
+        SET @orderSubtotal = @orderSubtotal + (@itemPrice * @randomQuantity);
+        SET @itemIter = @itemIter + 1;
+    END
+
+    -- 7. Total in der Bestellung aktualisieren
+    UPDATE CustomerOrder 
+    SET total = @orderSubtotal + @deliveryFee
+    WHERE id = @currentOrderId;
+
+    SET @orderCounter = @orderCounter + 1;
+END
+
+PRINT '30 Orders with items inserted.';
 
 PRINT 'Test data filled successfully.';
 

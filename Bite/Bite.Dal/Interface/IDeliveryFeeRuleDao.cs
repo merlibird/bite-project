@@ -17,4 +17,6 @@ public interface IDeliveryFeeRuleDao
     Task<bool> UpdateAsync(DeliveryFeeRule deliveryFeeRule, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default);
 }

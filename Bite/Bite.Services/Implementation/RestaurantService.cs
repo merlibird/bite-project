@@ -12,9 +12,58 @@ public class RestaurantService(
     IAddressDao addressDao,
     IOpeningHourSlotDao openingHourSlotDao,
     IApiKeyService apiKeyService,
-    TimeProvider timeProvider) : IRestaurantService
+    TimeProvider timeProvider,
+    IDeliveryZoneDao deliveryZoneDao,
+    IDeliveryFeeRuleDao deliveryFeeRuleDao) : IRestaurantService
 {
     //private const string ImageBaseDir = "wwwroot/images/restaurants";
+
+    public async Task<ServiceResult<bool>> UpdateDeliveryConditionsAsync(
+        int restaurantId,
+        IEnumerable<DeliveryZone> deliveryZones,
+        IEnumerable<DeliveryFeeRule> feeRules,
+        CancellationToken cancellationToken = default)
+    {
+        var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
+        if (restaurant is null)
+        {
+            return ServiceResult<bool>.Failure("Restaurant not found.", ServiceResultType.NotFound);
+        }
+
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        // Delete existing rules and zones
+        await deliveryFeeRuleDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
+        await deliveryZoneDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
+
+        // Insert new zones and rules
+        foreach (var zone in deliveryZones)
+        {
+            var zoneToInsert = new DeliveryZone(
+                id: 0,
+                restaurantId: restaurantId,
+                minOrderValue: zone.MinOrderValue,
+                maxDistance: zone.MaxDistance
+            );
+
+            int zoneId = await deliveryZoneDao.InsertAsync(zoneToInsert, cancellationToken);
+
+            var zoneRules = feeRules.Where(r => r.DeliveryZoneId == zone.Id); // Mapping based on temporary IDs from DTO conversion
+            foreach (var rule in zoneRules)
+            {
+                var ruleToInsert = new DeliveryFeeRule(
+                    id: 0,
+                    deliveryZoneId: zoneId,
+                    maxOrderValue: rule.MaxOrderValue,
+                    deliveryFee: rule.DeliveryFee
+                );
+                await deliveryFeeRuleDao.InsertAsync(ruleToInsert, cancellationToken);
+            }
+        }
+
+        scope.Complete();
+        return ServiceResult<bool>.Success(true);
+    }
 
     public async Task<ServiceResult<(int RestaurantId, string RawApiKey)>> RegisterAsync(
         Restaurant restaurant,
@@ -132,11 +181,18 @@ public class RestaurantService(
                 continue;
             }
 
-            var distanceInKm = CalculateDistanceInKm(
+            var distanceInKm = GeoUtils.CalculateDistanceInKm(
                 latitude,
                 longitude,
                 address.Latitude,
                 address.Longitude);
+
+            // Check if user is within any delivery zone of the restaurant
+            var deliveryZones = await deliveryZoneDao.FindByRestaurantIdAsync(restaurant.Id, cancellationToken);
+            if (!deliveryZones.Any(z => distanceInKm <= z.MaxDistance))
+            {
+                continue;
+            }
 
             searchItems.Add((
                 restaurant,
@@ -182,32 +238,5 @@ public class RestaurantService(
         var previousDay = (dayOfWeek + 6) % 7;
         return (slot.DayOfWeek == dayOfWeek && time >= slot.OpenTime) ||
                (slot.DayOfWeek == previousDay && time < slot.CloseTime);
-    }
-
-    private static double CalculateDistanceInKm(
-        double latitude1,
-        double longitude1,
-        double latitude2,
-        double longitude2)
-    {
-        const double earthRadiusInKm = 6371;
-
-        var latitudeDistance = ToRadians(latitude2 - latitude1);
-        var longitudeDistance = ToRadians(longitude2 - longitude1);
-        var currentLatitude = ToRadians(latitude1);
-        var restaurantLatitude = ToRadians(latitude2);
-
-        var a = Math.Sin(latitudeDistance / 2) * Math.Sin(latitudeDistance / 2) +
-                Math.Cos(currentLatitude) * Math.Cos(restaurantLatitude) *
-                Math.Sin(longitudeDistance / 2) * Math.Sin(longitudeDistance / 2);
-
-        var c = 2 * Math.Asin(Math.Sqrt(a));
-
-        return earthRadiusInKm * c;
-    }
-
-    private static double ToRadians(double degrees)
-    {
-        return degrees * Math.PI / 180;
     }
 }

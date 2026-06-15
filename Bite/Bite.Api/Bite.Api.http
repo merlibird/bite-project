@@ -106,5 +106,95 @@ X-Api-Key: {{RestaurantApiKey}}
         }
       ]
     }
-  ]
+    }
+    }
+
+### Place order
+    POST {{Bite.Api_HostAddress}}/api/restaurants/2/orders
+    Content-Type: application/json
+
+    {
+    "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 2
+    }
+    ],
+    "deliveryAddress": {
+    "street": "Softwarepark",
+    "number": "23",
+    "zipCode": "4232",
+    "city": "Hagenberg",
+    "country": "Austria",
+    "latitude": 48.3692673,
+    "longitude": 14.5125979,
+    "additionalInfo": "Zimmer 404"
+    }
+    }
+###
+PUT {{Bite.Api_HostAddress}}/api/restaurants/2/delivery-conditions
+X-Api-Key: {{RestaurantApiKey}}
+Content-Type: application/json
+
+[
+  {
+    "maxDistance": 10.0,
+    "minOrderValue": 20.0,
+    "feeRules": [
+      {
+        "maxOrderValue": 0.0,
+        "deliveryFee": 0.0
+      }
+    ]
+  },
+  {
+    "maxDistance": 1000.0,
+    "minOrderValue": 20.0,
+    "feeRules": [
+      {
+        "maxOrderValue": 30.0,
+        "deliveryFee": 5.0
+      },
+      {
+        "maxOrderValue": 0.0,
+        "deliveryFee": 0.0
+      }
+    ]
+  }
+]
+
+### Calculate order price
+POST {{Bite.Api_HostAddress}}/api/restaurants/1/orders/price
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 2
+    }
+  ],
+  "deliveryAddress": {
+    "street": "Softwarepark",
+    "number": "23",
+    "zipCode": "4232",
+    "city": "Hagenberg",
+    "country": "Austria",
+    "latitude": 48.3692673,
+    "longitude": 14.5125979,
+    "additionalInfo": "Zimmer 404"
+  }
 }
+
+
+### Get Status of an Order
+
+GET {{Bite.Api_HostAddress}}/api/orders/A6C3DD91/status

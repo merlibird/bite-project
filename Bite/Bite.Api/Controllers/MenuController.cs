@@ -1,3 +1,4 @@
+using Bite.Api.Auth;
 using Bite.Api.Dtos;
 using Bite.Api.Dtos.Mappers;
 using Bite.Services.Common;
@@ -25,17 +26,23 @@ public class MenuController(IMenuService menuService) : ControllerBase
         return Ok(menu.ToMenuDto());
     }
 
+    [ApiKeyAuth]
     [HttpPut("{id:int}/menu")]
     public async Task<ActionResult<MenuDto>> UpdateMenu(
         [FromRoute] int id,
-        [FromHeader(Name = "X-Api-Key")] string? apiKey,
         [FromBody] UpdateMenuRequest request,
         CancellationToken cancellationToken)
     {
+        int authenticatedRestaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
+
+        if (id != authenticatedRestaurantId)
+        {
+            return Forbid();
+        }
+
         var result = await menuService.UpdateMenuAsync(
             id,
             request.ToMenu(id),
-            apiKey ?? string.Empty,
             cancellationToken);
 
         if (!result.IsSuccess)
