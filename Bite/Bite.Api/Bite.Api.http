@@ -168,7 +168,7 @@ Content-Type: application/json
 ]
 
 ### Calculate order price
-POST {{Bite.Api_HostAddress}}/api/restaurants/2/orders/price
+POST {{Bite.Api_HostAddress}}/api/restaurants/1/orders/price
 Content-Type: application/json
 
 {
@@ -195,6 +195,6 @@ Content-Type: application/json
 }
 
 
-### 
+### Get Status of an Order
 
 GET {{Bite.Api_HostAddress}}/api/orders/A6C3DD91/status

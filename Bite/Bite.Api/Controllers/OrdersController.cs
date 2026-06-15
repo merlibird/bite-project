@@ -118,6 +118,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }
@@ -158,6 +159,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }

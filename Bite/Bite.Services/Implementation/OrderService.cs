@@ -240,18 +240,24 @@ public class OrderService(
 
         if (zones.Count == 0)
         {
-            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Outside delivery area.", ServiceResultType.Error);
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Outside delivery area.", ServiceResultType.ValidationError);
         }
 
         var validZone = zones.FirstOrDefault(z => subtotal >= z.MinOrderValue);
         if (validZone is null)
         {
-            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Minimum order value not reached.", ServiceResultType.Error);
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("Minimum order value not reached.", ServiceResultType.ValidationError);
         }
 
         var rules = (await deliveryFeeRuleDao.FindByRestaurantIdAndZoneIdAsync(restaurantId, validZone.Id, cancellationToken))
             .OrderBy(r => r.MaxOrderValue)
             .ToList();
+
+        if (rules.Count == 0)
+        {
+            // If a zone exists but no rules are defined, it's considered non-deliverable
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery rules defined for this area.", ServiceResultType.ValidationError);
+        }
 
         decimal deliveryFee = 0;
         var applicableRule = rules.FirstOrDefault(r => subtotal <= r.MaxOrderValue);
