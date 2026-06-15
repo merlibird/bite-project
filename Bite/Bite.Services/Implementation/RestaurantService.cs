@@ -187,6 +187,13 @@ public class RestaurantService(
                 address.Latitude,
                 address.Longitude);
 
+            // Check if user is within any delivery zone of the restaurant
+            var deliveryZones = await deliveryZoneDao.FindByRestaurantIdAsync(restaurant.Id, cancellationToken);
+            if (!deliveryZones.Any(z => distanceInKm <= z.MaxDistance))
+            {
+                continue;
+            }
+
             searchItems.Add((
                 restaurant,
                 address,
