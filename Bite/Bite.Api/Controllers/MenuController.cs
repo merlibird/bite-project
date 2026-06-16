@@ -50,8 +50,7 @@ public class MenuController(IMenuService menuService) : ControllerBase
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
-                ServiceResultType.ValidationError => BadRequest(new { message = result.ErrorMessage }),
+                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }
