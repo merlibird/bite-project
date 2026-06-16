@@ -26,9 +26,9 @@ public static class MenuMapper
                 .ToList());
     }
 
-    public static MenuDto ToMenuDto(this Menu menu)
+    public static MenuResponse ToMenuResponse(this Menu menu)
     {
-        return new MenuDto
+        return new MenuResponse
         {
             RestaurantId = menu.RestaurantId,
             Categories = menu.Categories

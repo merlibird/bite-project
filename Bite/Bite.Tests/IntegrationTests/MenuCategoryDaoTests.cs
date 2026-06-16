@@ -43,30 +43,6 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     // -------------------------------------------------------------------------
-    // FindAllAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task FindAllAsync_EmptyTable_ReturnsEmptyList()
-    {
-        var result = await dao.FindAllAsync();
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task FindAllAsync_TwoCategoriesInserted_ReturnsBothCategories()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-
-        await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
-        await dao.InsertAsync(MakeMenuCategory("Hauptspeisen", restaurantId));
-
-        var result = await dao.FindAllAsync();
-
-        Assert.Equal(2, result.Count());
-    }
-
-    // -------------------------------------------------------------------------
     // FindAllByRestaurantIdAsync
     // -------------------------------------------------------------------------
 

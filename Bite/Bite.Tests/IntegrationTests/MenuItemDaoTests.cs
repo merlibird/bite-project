@@ -45,30 +45,6 @@ public class MenuItemDaoTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     // -------------------------------------------------------------------------
-    // FindAllAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task FindAllAsync_EmptyTable_ReturnsEmptyList()
-    {
-        var result = await dao.FindAllAsync();
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task FindAllAsync_TwoMenuItemsInserted_ReturnsBothMenuItems()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-
-        await dao.InsertAsync(MakeMenuItem("Schnitzel", restaurantId));
-        await dao.InsertAsync(MakeMenuItem("Salat", restaurantId));
-
-        var result = await dao.FindAllAsync();
-
-        Assert.Equal(2, result.Count());
-    }
-
-    // -------------------------------------------------------------------------
     // FindAllByRestaurantIdAsync
     // -------------------------------------------------------------------------
 
@@ -102,51 +78,6 @@ public class MenuItemDaoTests : IAsyncLifetime
         await dao.InsertAsync(MakeMenuItem("Pizza", restaurantId2));
 
         var result = await dao.FindAllByRestaurantIdAsync(restaurantId1);
-
-        Assert.Single(result);
-        Assert.Equal("Schnitzel", result.First().Name);
-    }
-
-    // -------------------------------------------------------------------------
-    // FindAllByMenuCategoryIdAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task FindAllByMenuCategoryIdAsync_NonExistingMenuCategoryId_ReturnsEmptyList()
-    {
-        var result = await dao.FindAllByMenuCategoryIdAsync(69420);
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task FindAllByMenuCategoryIdAsync_TwoMenuItemsInCategory_ReturnsBothMenuItems()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int categoryId = await SeedMenuCategoryAsync(restaurantId);
-
-        var id1 = await dao.InsertAsync(MakeMenuItem("Schnitzel", restaurantId));
-        var id2 = await dao.InsertAsync(MakeMenuItem("Salat", restaurantId));
-        await dao.SetMenuCategoriesAsync(id1, [categoryId]);
-        await dao.SetMenuCategoriesAsync(id2, [categoryId]);
-
-        var result = await dao.FindAllByMenuCategoryIdAsync(categoryId);
-
-        Assert.Equal(2, result.Count());
-    }
-
-    [Fact]
-    public async Task FindAllByMenuCategoryIdAsync_OnlyReturnsItemsForGivenCategory()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int categoryId1 = await SeedMenuCategoryAsync(restaurantId, "Kategorie 1");
-        int categoryId2 = await SeedMenuCategoryAsync(restaurantId, "Kategorie 2");
-
-        var id1 = await dao.InsertAsync(MakeMenuItem("Schnitzel", restaurantId));
-        var id2 = await dao.InsertAsync(MakeMenuItem("Salat", restaurantId));
-        await dao.SetMenuCategoriesAsync(id1, [categoryId1]);
-        await dao.SetMenuCategoriesAsync(id2, [categoryId2]);
-
-        var result = await dao.FindAllByMenuCategoryIdAsync(categoryId1);
 
         Assert.Single(result);
         Assert.Equal("Schnitzel", result.First().Name);

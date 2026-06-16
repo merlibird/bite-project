@@ -62,30 +62,4 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(Address address, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            """
-            update Address
-            set additional_info=@additionalInfo
-            where id=@id
-            """,
-            [
-            new QueryParameter("@additionalInfo", address.AdditionalInfo),
-            new QueryParameter("@id", address.Id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
-
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            "delete from Address where id=@id",
-            [
-            new QueryParameter("@id", id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
 }

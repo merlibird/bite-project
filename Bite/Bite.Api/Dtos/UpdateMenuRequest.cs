@@ -2,33 +2,37 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Bite.Api.Dtos;
 
-public class UpdateMenuRequest
+public record UpdateMenuRequest
 {
-    public List<UpdateMenuCategoryRequest> Categories { get; set; } = [];
+    public List<UpdateMenuCategoryDto> Categories { get; init; } = [];
 }
 
-public class UpdateMenuCategoryRequest
+public record UpdateMenuCategoryDto
 {
     public int Id { get; set; }
 
     [Required]
-    public string Name { get; set; } = string.Empty;
+    [StringLength(50)]
+    public string Name { get; init; } = string.Empty;
 
     public bool IsActive { get; set; } = true;
 
     public List<UpdateMenuItemRequest> Items { get; set; } = [];
 }
 
-public class UpdateMenuItemRequest
+public record UpdateMenuItemDto
 {
     public int Id { get; set; }
 
     [Required]
-    public string Name { get; set; } = string.Empty;
+    [StringLength(100)]
+    public string Name { get; init; } = string.Empty;
 
-    public string? Description { get; set; }
+    [StringLength(255)]
+    public string? Description { get; init; }
 
-    public decimal Price { get; set; }
+    [Range(0, 100000)]
+    public decimal Price { get; init; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; init; } = true;
 }

@@ -1,5 +1,6 @@
 using Bite.Api.Auth;
 using Bite.Api.Dtos;
+using Bite.Api.Dtos.Mappers;
 using Bite.Domain;
 using Bite.Services.Common;
 using Bite.Services.Interface;
@@ -99,12 +100,12 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
     public async Task<IActionResult> CalculatePrice(
         [FromRoute] int restaurantId,
-        [FromBody] OrderPriceRequestDto request,
+        [FromBody] OrderRequest request,
         CancellationToken cancellationToken)
     {
         var result = await orderService.CalculatePriceAsync(
             restaurantId,
-            request.Items.Select(i => (i.MenuItemId, i.Quantity)),
+            request.Items.ToItemTuples(),
             (request.DeliveryAddress.Latitude, request.DeliveryAddress.Longitude),
             cancellationToken);
 
@@ -118,7 +119,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             };
         }
 
-        return Ok(new OrderPriceResponseDto
+        return Ok(new Dtos.OrderPriceResponse
         {
             Subtotal = result.Data!.Subtotal,
             DeliveryFee = result.Data!.DeliveryFee
@@ -128,25 +129,13 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     [HttpPost("/api/restaurants/{restaurantId}/orders")]
     public async Task<IActionResult> PlaceOrder(
         [FromRoute] int restaurantId,
-        [FromBody] PlaceOrderRequestDto request,
+        [FromBody] OrderRequest request,
         CancellationToken cancellationToken)
     {
-        var address = new Address(
-            id: 0,
-            street: request.DeliveryAddress.Street,
-            number: request.DeliveryAddress.Number,
-            zipCode: request.DeliveryAddress.ZipCode,
-            city: request.DeliveryAddress.City,
-            country: request.DeliveryAddress.Country,
-            longitude: request.DeliveryAddress.Longitude,
-            latitude: request.DeliveryAddress.Latitude,
-            additionalInfo: request.DeliveryAddress.AdditionalInfo
-        );
-
         var result = await orderService.PlaceOrderAsync(
             restaurantId,
-            request.Items.Select(i => (i.MenuItemId, i.Quantity)),
-            address,
+            request.Items.ToItemTuples(),
+            request.DeliveryAddress.ToDomain(),
             cancellationToken);
 
         if (!result.IsSuccess)
@@ -159,7 +148,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             };
         }
 
-        return CreatedAtAction(nameof(GetStatus), new { orderCode = result.Data }, new PlaceOrderResponseDto
+        return CreatedAtAction(nameof(GetStatus), new { orderCode = result.Data }, new PlaceOrderResponse
         {
             OrderCode = result.Data!
         });
