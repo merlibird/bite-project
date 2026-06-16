@@ -249,6 +249,7 @@ public class OrderService(
         var zones = (await deliveryZoneDao.FindByRestaurantIdAsync(restaurantId, cancellationToken))
             .Where(z => distance <= z.MaxDistance)
             .OrderBy(z => z.MaxDistance)
+            .ThenBy(z => z.MinOrderValue)
             .ToList();
 
         if (zones.Count == 0)

@@ -19,13 +19,16 @@ public class MenuService(
             return null;
         }
 
-        var categories = await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
-        var items = await menuItemDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
+        var categories = (await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken))
+            .Where(c => c.IsActive);
+        var items = (await menuItemDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken))
+            .Where(i => i.IsActive);
 
         var categoryWithItems = categories
             .Select(category => new MenuCategoryWithItems(
                 id: category.Id,
                 name: category.Name,
+                isActive: category.IsActive,
                 items: items
                     .Where(item => item.MenuCategoryIds.Contains(category.Id))
                     .ToList()))
@@ -50,39 +53,101 @@ public class MenuService(
         var validationError = ValidateMenu(menu);
         if (validationError is not null)
         {
-            return ServiceResult<Menu>.Failure(validationError);
+            return ServiceResult<Menu>.Failure(validationError, ServiceResultType.ValidationError);
         }
 
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
-        await menuItemDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-        await menuCategoryDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-
-        foreach (var category in menu.Categories)
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            int categoryId = await menuCategoryDao.InsertAsync(
-                new MenuCategory(
-                    id: 0,
-                    restaurantId: restaurantId,
-                    name: category.Name.Trim()),
-                cancellationToken);
+            var existingCategories = await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
+            var existingItems = await menuItemDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken);
 
-            foreach (var item in category.Items)
+            var processedCategoryIds = new List<int>();
+            var processedItemIds = new List<int>();
+
+            // 1. Process Categories and their items in one pass to avoid ID collision issues
+            foreach (var category in menu.Categories)
             {
-                await menuItemDao.InsertAsync(
-                    new MenuItem(
-                        id: 0,
-                        restaurantId: restaurantId,
-                        name: item.Name.Trim(),
-                        description: string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
-                        price: item.Price,
-                        isActive: item.IsActive,
-                        menuCategoryIds: [categoryId]),
-                    cancellationToken);
-            }
-        }
+                var existingCategory = existingCategories.FirstOrDefault(c => c.Id == category.Id && c.Id != 0);
+                
+                if (existingCategory == null)
+                {
+                    existingCategory = existingCategories.FirstOrDefault(c => c.Name.Equals(category.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+                }
 
-        scope.Complete();
+                int dbCategoryId;
+                if (existingCategory != null)
+                {
+                    existingCategory.Name = category.Name.Trim();
+                    existingCategory.IsActive = category.IsActive;
+                    await menuCategoryDao.UpdateAsync(existingCategory, cancellationToken);
+                    dbCategoryId = existingCategory.Id;
+                }
+                else
+                {
+                    dbCategoryId = await menuCategoryDao.InsertAsync(
+                        new MenuCategory(0, restaurantId, category.Name.Trim(), category.IsActive),
+                        cancellationToken);
+                }
+                processedCategoryIds.Add(dbCategoryId);
+
+                // 2. Process Items within this specific category
+                foreach (var item in category.Items)
+                {
+                    var existingItem = existingItems.FirstOrDefault(i => i.Id == item.Id && i.Id != 0);
+                    
+                    if (existingItem != null)
+                    {
+                        var updatedItem = new MenuItem(
+                            existingItem.Id,
+                            restaurantId,
+                            item.Name.Trim(),
+                            string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
+                            item.Price,
+                            item.IsActive,
+                            menuCategoryIds: [dbCategoryId]);
+                        
+                        await menuItemDao.UpdateAsync(updatedItem, cancellationToken);
+                        await menuItemDao.SetMenuCategoriesAsync(updatedItem.Id, [dbCategoryId], cancellationToken);
+                        processedItemIds.Add(updatedItem.Id);
+                    }
+                    else
+                    {
+                        var newItem = new MenuItem(
+                            0,
+                            restaurantId,
+                            item.Name.Trim(),
+                            string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
+                            item.Price,
+                            item.IsActive,
+                            menuCategoryIds: [dbCategoryId]);
+                        
+                        int newItemId = await menuItemDao.InsertAsync(newItem, cancellationToken);
+                        processedItemIds.Add(newItemId);
+                    }
+                }
+            }
+
+            // Deactivate categories not present in the request
+            foreach (var existing in existingCategories.Where(c => c.IsActive && !processedCategoryIds.Contains(c.Id)))
+            {
+                existing.IsActive = false;
+                await menuCategoryDao.UpdateAsync(existing, cancellationToken);
+            }
+
+            // Deactivate items not present in the request (Implicit Soft-Delete)
+            // Since this is a "replace all" update (User Story 4), any item that existed in the DB 
+            // but is missing from the incoming JSON is considered removed from the active menu.
+            // We set isActive = false to keep the menu clean for new customers while preserving 
+            // the record for historical orders.
+            foreach (var existing in existingItems.Where(i => i.IsActive && !processedItemIds.Contains(i.Id)))
+            {
+                existing.IsActive = false;
+                await menuItemDao.UpdateAsync(existing, cancellationToken);
+                await menuItemDao.SetMenuCategoriesAsync(existing.Id, [], cancellationToken);
+            }
+
+            scope.Complete();
+        }
 
         var updatedMenu = await GetMenuAsync(restaurantId, cancellationToken);
         return ServiceResult<Menu>.Success(updatedMenu!);

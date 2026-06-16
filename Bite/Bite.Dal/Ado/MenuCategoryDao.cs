@@ -19,7 +19,8 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return new MenuCategory(
             id: (int)row["id"],
             restaurantId: (int)row["restaurant_id"],
-            name: (string)row["name"]);
+            name: (string)row["name"],
+            isActive: (bool)row["is_active"]);
     }
 
     public async Task<MenuCategory?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -45,15 +46,16 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return await template.QuerySingleAsync(
             """
             insert into MenuCategory
-            (restaurant_id, name)
+            (restaurant_id, name, is_active)
             output inserted.id
             values
-            (@restaurantId, @name)
+            (@restaurantId, @name, @isActive)
             """,
             row => (int)row[0],
             [
                 new QueryParameter("@restaurantId", menuCategory.RestaurantId), 
-                new QueryParameter("@name", menuCategory.Name)
+                new QueryParameter("@name", menuCategory.Name),
+                new QueryParameter("@isActive", menuCategory.IsActive)
             ],
             cancellationToken);
     }
@@ -63,12 +65,13 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
         return await template.ExecuteAsync(
             """
             update MenuCategory
-            set restaurant_id=@restaurantId, name=@name
+            set restaurant_id=@restaurantId, name=@name, is_active=@isActive
             where id=@id
             """,
             [
                 new QueryParameter("@restaurantId", menuCategory.RestaurantId),
                 new QueryParameter("@name", menuCategory.Name),
+                new QueryParameter("@isActive", menuCategory.IsActive),
                 new QueryParameter("@id", menuCategory.Id)
             ],
             cancellationToken

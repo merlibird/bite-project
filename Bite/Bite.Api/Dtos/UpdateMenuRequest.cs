@@ -9,15 +9,21 @@ public record UpdateMenuRequest
 
 public record UpdateMenuCategoryDto
 {
+    public int Id { get; set; }
+
     [Required]
     [StringLength(50)]
     public string Name { get; init; } = string.Empty;
 
-    public List<UpdateMenuItemDto> Items { get; init; } = [];
+    public bool IsActive { get; set; } = true;
+
+    public List<UpdateMenuItemRequest> Items { get; set; } = [];
 }
 
 public record UpdateMenuItemDto
 {
+    public int Id { get; set; }
+
     [Required]
     [StringLength(100)]
     public string Name { get; init; } = string.Empty;

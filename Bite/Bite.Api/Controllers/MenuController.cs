@@ -20,7 +20,7 @@ public class MenuController(IMenuService menuService) : ControllerBase
 
         if (menu is null)
         {
-            return NotFound();
+            return NotFound(new { message = "Restaurant not found." });
         }
 
         return Ok(menu.ToMenuResponse());
@@ -50,6 +50,8 @@ public class MenuController(IMenuService menuService) : ControllerBase
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
+                ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
+                ServiceResultType.ValidationError => BadRequest(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }

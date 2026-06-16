@@ -1,15 +1,11 @@
 -- ============================================================
 -- fill-data.sql
 -- Fills the BiteTestDb with sample data (restaurants, menu items, etc.).
--- Called after init-db.sql to populate the database.
--- Called via sqlcmd:
---   sqlcmd -S db -U sa -P <password> -C -i fill-data.sql
 -- ============================================================
 
 USE BiteTestDb;
 GO
 
--- Check if the database is already filled (by checking if there are any restaurants)
 IF EXISTS (SELECT 1 FROM Restaurant)
 BEGIN
     PRINT 'Database already contains data. Skipping fill-data.sql.';
@@ -19,357 +15,204 @@ END
 SET NOCOUNT ON;
 
 -- ============================================================
--- 1. Restaurant Nimmersatt
+-- 1. API KEY HASHING STRATEGY
 -- ============================================================
-DECLARE @addrNimmersatt    INT;
-DECLARE @restNimmersatt    INT;
-DECLARE @zone1Nimmersatt   INT;
-DECLARE @zone2Nimmersatt   INT;
-DECLARE @catNimPizza       INT;
-DECLARE @catNimPasta       INT;
-DECLARE @catNimGetraenke   INT;
-DECLARE @catNimDessert     INT;
+DECLARE @rawNim VARCHAR(100) = 'nimmersatt-api-key-2026';
+DECLARE @rawBur VARCHAR(100) = 'burger-bude-api-key-2026';
+DECLARE @rawSak VARCHAR(100) = 'sakura-sushi-api-key-2026';
+
+DECLARE @hashNim VARCHAR(64) = UPPER(CONVERT(NVARCHAR(64), HASHBYTES('SHA2_256', @rawNim), 2));
+DECLARE @hashBur VARCHAR(64) = UPPER(CONVERT(NVARCHAR(64), HASHBYTES('SHA2_256', @rawBur), 2));
+DECLARE @hashSak VARCHAR(64) = UPPER(CONVERT(NVARCHAR(64), HASHBYTES('SHA2_256', @rawSak), 2));
+
+-- ============================================================
+-- 2. Restaurant Nimmersatt (Hagenberg)
+-- ============================================================
+DECLARE @addrNim INT;
+DECLARE @restNim INT;
+DECLARE @z1Nim   INT;
+DECLARE @cNPiz   INT;
+DECLARE @cNPas   INT;
 
 INSERT INTO Address (street, number, zip_code, city, country, longitude, latitude)
-VALUES ('Softwarepark', '11', '4232', 'Hagenberg', 'Austria', 14.5144, 48.3684);
-SET @addrNimmersatt = SCOPE_IDENTITY();
+VALUES ('Softwarepark', '11', '4232', 'Hagenberg', 'AT', 14.5144, 48.3684);
+SET @addrNim = SCOPE_IDENTITY();
 
 INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
-VALUES ('Restaurant Nimmersatt', @addrNimmersatt, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png', 'DUMMY_KEY_NIMMERSATT_12345');    
-SET @restNimmersatt = SCOPE_IDENTITY();
+VALUES ('Restaurant Nimmersatt', @addrNim, 'https://api.nimmersatt.at/bite', 'img/nimmersatt.png', @hashNim);
+SET @restNim = SCOPE_IDENTITY();
 
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Pizza');
-SET @catNimPizza = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Pasta');
-SET @catNimPasta = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Getraenke');
-SET @catNimGetraenke = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNimmersatt, 'Dessert');
-SET @catNimDessert = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restNim, 'Pizza'), (@restNim, 'Pasta');
+SELECT @cNPiz = id FROM MenuCategory WHERE restaurant_id = @restNim AND name = 'Pizza';
+SELECT @cNPas = id FROM MenuCategory WHERE restaurant_id = @restNim AND name = 'Pasta';
 
-DECLARE @itemsNimmersatt TABLE (
-    name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(255),
-    price DECIMAL(10, 2) NOT NULL,
-    menu_category_id INT NOT NULL
-);
-
-INSERT INTO @itemsNimmersatt (name, description, price, menu_category_id) VALUES
-    ('Margherita',               'Tomaten, Kaese',                              9.50, @catNimPizza),
-    ('Al Tonno',                 'Tomaten, Kaese, Thunfisch, Zwiebel, Oliven', 11.00, @catNimPizza),
-    ('Spinaci',                  'Tomaten, Kaese, Spinat, Feta',               10.00, @catNimPizza),
-    ('Diavola',                  'Tomaten, Kaese, Salami, Chili',              10.50, @catNimPizza),
-    ('Lasagne al Forno',         'Mit Rinderfaschiertem',                      12.00, @catNimPasta),
-    ('Spaghetti Frutti di Mare', 'Meeresfruechte, Weissweinsauce',             14.00, @catNimPasta),
-    ('Penne Arrabbiata',         'Tomatensauce, Chili, Knoblauch',              9.00, @catNimPasta),
-    ('Cola',                     '0,5l',                                        2.50, @catNimGetraenke),
-    ('Wasser',                   '0,5l still',                                  1.80, @catNimGetraenke),
-    ('Bier',                     '0,5l Ottakringer',                            3.50, @catNimGetraenke),
-    ('Tiramisu',                 'Hausgemacht',                                 5.50, @catNimDessert),
-    ('Panna Cotta',              'Mit Beerensauce',                             4.90, @catNimDessert);
-
-INSERT INTO MenuItem (restaurant_id, name, description, price)
-SELECT @restNimmersatt, name, description, price
-FROM @itemsNimmersatt;
+INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
+    (@restNim, 'Margherita', 'Classic Tomato & Cheese', 9.50),
+    (@restNim, 'Spinaci', 'Spinat & Feta', 10.50),
+    (@restNim, 'Lasagne al Forno', 'Hausgemacht mit Rind', 12.00);
 
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT mi.id, i.menu_category_id, @restNimmersatt
-FROM @itemsNimmersatt i
-JOIN MenuItem mi ON mi.restaurant_id = @restNimmersatt AND mi.name = i.name;
+SELECT id, @cNPiz, @restNim FROM MenuItem WHERE restaurant_id = @restNim AND name IN ('Margherita', 'Spinaci');
+INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
+SELECT id, @cNPas, @restNim FROM MenuItem WHERE restaurant_id = @restNim AND name = 'Lasagne al Forno';
 
--- Opening hours: Tuesday-Friday 11-15 and 17-22 (day 2-5), Saturday 11-14 (day 6), Sunday 11-14 (day 0)
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
-    (@restNimmersatt, 2, '11:00', '15:00'),
-    (@restNimmersatt, 2, '17:00', '22:00'),
-    (@restNimmersatt, 3, '11:00', '15:00'),
-    (@restNimmersatt, 3, '17:00', '22:00'),
-    (@restNimmersatt, 4, '11:00', '15:00'),
-    (@restNimmersatt, 4, '17:00', '22:00'),
-    (@restNimmersatt, 5, '11:00', '15:00'),
-    (@restNimmersatt, 5, '17:00', '22:00'),
-    (@restNimmersatt, 6, '11:00', '14:00'),
-    (@restNimmersatt, 0, '11:00', '14:00');
+    (@restNim, 1, '11:00', '22:00'), (@restNim, 2, '11:00', '22:00'), (@restNim, 3, '11:00', '22:00'),
+    (@restNim, 4, '11:00', '22:00'), (@restNim, 5, '11:00', '22:00'), (@restNim, 6, '11:00', '14:00'), (@restNim, 0, '11:00', '14:00');
 
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restNimmersatt, 20.00, 10.0);
-SET @zone1Nimmersatt = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone1Nimmersatt, 9999.00, 0.00);
-
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restNimmersatt, 20.00, 20.0);
-SET @zone2Nimmersatt = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
-    (@zone2Nimmersatt, 30.00,   5.00),
-    (@zone2Nimmersatt, 9999.00, 0.00);
-
-PRINT 'Restaurant Nimmersatt inserted.';
+INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restNim, 15.00, 15.0);
+SET @z1Nim = SCOPE_IDENTITY();
+INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@z1Nim, 999.00, 0.00);
 
 -- ============================================================
--- 2. Restaurant Burger Bude Wien
+-- 3. Restaurant Burger Bude Wien
 -- ============================================================
-DECLARE @addrBurger    INT;
-DECLARE @restBurger    INT;
-DECLARE @zone1Burger   INT;
-DECLARE @zone2Burger   INT;
-DECLARE @catBurBurger  INT;
-DECLARE @catBurSalat   INT;
-DECLARE @catBurGetrank INT;
+DECLARE @addrBur INT;
+DECLARE @restBur INT;
+DECLARE @z1Bur   INT;
+DECLARE @cBBur   INT;
 
 INSERT INTO Address (street, number, zip_code, city, country, longitude, latitude)
-VALUES ('Hauptstrasse', '42', '1010', 'Wien', 'Austria', 16.3738, 48.2082);
-SET @addrBurger = SCOPE_IDENTITY();
+VALUES ('Hauptstrasse', '42', '1010', 'Wien', 'AT', 16.3738, 48.2082);
+SET @addrBur = SCOPE_IDENTITY();
 
 INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
-VALUES ('Burger Bude Wien', @addrBurger, 'https://hooks.burgerbude.at/bite', 'img/burgerbude.png', 'DUMMY_KEY_BURGERBUDE_12345');
-SET @restBurger = SCOPE_IDENTITY();
+VALUES ('Burger Bude Wien', @addrBur, 'https://hooks.burgerbude.at/bite', 'img/burgerbude.png', @hashBur);
+SET @restBur = SCOPE_IDENTITY();
 
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restBurger, 'Burger');
-SET @catBurBurger = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restBurger, 'Salat');
-SET @catBurSalat = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restBurger, 'Getraenke');
-SET @catBurGetrank = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restBur, 'Burger');
+SET @cBBur = SCOPE_IDENTITY();
 
-DECLARE @itemsBurger TABLE (
-    name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(255),
-    price DECIMAL(10, 2) NOT NULL,
-    menu_category_id INT NOT NULL
-);
-
-INSERT INTO @itemsBurger (name, description, price, menu_category_id) VALUES
-    ('Classic Burger', 'Rindfleisch, Salat, Tomate, Gurke',       8.90, @catBurBurger),
-    ('Cheese Burger',  'Rindfleisch, Cheddar, Zwiebeln',          9.50, @catBurBurger),
-    ('BBQ Burger',     'Rindfleisch, BBQ-Sauce, Bacon, Cheddar', 11.90, @catBurBurger),
-    ('Veggie Burger',  'Gemuesepatty, Avocado, Tomate',           9.90, @catBurBurger),
-    ('Chicken Burger', 'Knuspriges Huehnchen, Coleslaw',         10.50, @catBurBurger),
-    ('Caesar Salad',   'Roemerherz, Parmesan, Croutons',          7.90, @catBurSalat),
-    ('Greek Salad',    'Tomate, Gurke, Feta, Oliven',             7.50, @catBurSalat),
-    ('Cola',           '0,4l',                                    2.80, @catBurGetrank),
-    ('Limo',           '0,4l, div. Sorten',                       2.80, @catBurGetrank),
-    ('Milchshake',     'Schoko, Vanille oder Erdbeere',           4.50, @catBurGetrank);
-
-INSERT INTO MenuItem (restaurant_id, name, description, price)
-SELECT @restBurger, name, description, price
-FROM @itemsBurger;
+INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
+    (@restBur, 'Classic Burger', 'Beef, Salad, Tomato', 8.90),
+    (@restBur, 'Cheese Burger', 'Beef & extra Cheddar', 9.50);
 
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT mi.id, i.menu_category_id, @restBurger
-FROM @itemsBurger i
-JOIN MenuItem mi ON mi.restaurant_id = @restBurger AND mi.name = i.name;
+SELECT id, @cBBur, @restBur FROM MenuItem WHERE restaurant_id = @restBur;
 
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
-    (@restBurger, 0, '11:00', '23:00'),
-    (@restBurger, 1, '11:00', '23:00'),
-    (@restBurger, 2, '11:00', '23:00'),
-    (@restBurger, 3, '11:00', '23:00'),
-    (@restBurger, 4, '11:00', '23:00'),
-    (@restBurger, 5, '11:00', '23:00'),
-    (@restBurger, 6, '11:00', '23:00');
+    (@restBur, 0, '11:00', '23:00'), (@restBur, 1, '11:00', '23:00'), (@restBur, 2, '11:00', '23:00'),
+    (@restBur, 3, '11:00', '23:00'), (@restBur, 4, '11:00', '23:00'), (@restBur, 5, '11:00', '23:00'), (@restBur, 6, '11:00', '23:00');
 
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restBurger, 15.00, 5.0);
-SET @zone1Burger = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
-    (@zone1Burger, 25.00,   2.99),
-    (@zone1Burger, 9999.00, 0.00);
-
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restBurger, 20.00, 15.0);
-SET @zone2Burger = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone2Burger, 9999.00, 4.99);
-
-PRINT 'Restaurant Burger Bude Wien inserted.';
+INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restBur, 20.00, 10.0);
+SET @z1Bur = SCOPE_IDENTITY();
+INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@z1Bur, 999.00, 2.50);
 
 -- ============================================================
--- 3. Restaurant Sakura Sushi
+-- 4. Restaurant Sakura Sushi (Wien)
 -- ============================================================
-DECLARE @addrSakura     INT;
-DECLARE @restSakura     INT;
-DECLARE @zone1Sakura    INT;
-DECLARE @zone2Sakura    INT;
-DECLARE @catSakSushi    INT;
-DECLARE @catSakSalat    INT;
-DECLARE @catSakGetrank  INT;
-DECLARE @catSakDessert  INT;
+DECLARE @addrSak INT;
+DECLARE @restSak INT;
+DECLARE @z1Sak   INT;
+DECLARE @cSSus   INT;
 
 INSERT INTO Address (street, number, zip_code, city, country, longitude, latitude)
-VALUES ('Mariahilfer Strasse', '88', '1060', 'Wien', 'Austria', 16.3540, 48.1970);
-SET @addrSakura = SCOPE_IDENTITY();
+VALUES ('Mariahilfer Strasse', '88', '1060', 'Wien', 'AT', 16.3540, 48.1970);
+SET @addrSak = SCOPE_IDENTITY();
 
-INSERT INTO Restaurant (name,  address_id, webhook_url, title_image_path, api_key)
-VALUES ('Sakura Sushi', @addrSakura, 'https://webhooks.sakura-sushi.at/orders', 'img/sakura.png', 'DUMMY_KEY_SAKURA_12345');
-SET @restSakura = SCOPE_IDENTITY();
+INSERT INTO Restaurant (name, address_id, webhook_url, title_image_path, api_key)
+VALUES ('Sakura Sushi', @addrSak, 'https://webhooks.sakura-sushi.at/orders', 'img/sakura.png', @hashSak);
+SET @restSak = SCOPE_IDENTITY();
 
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSakura, 'Sushi');
-SET @catSakSushi = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSakura, 'Salat');
-SET @catSakSalat = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSakura, 'Getraenke');
-SET @catSakGetrank = SCOPE_IDENTITY();
-INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSakura, 'Dessert');
-SET @catSakDessert = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@restSak, 'Sushi');
+SET @cSSus = SCOPE_IDENTITY();
 
-DECLARE @itemsSakura TABLE (
-    name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(255),
-    price DECIMAL(10, 2) NOT NULL,
-    menu_category_id INT NOT NULL
-);
-
-INSERT INTO @itemsSakura (name, description, price, menu_category_id) VALUES
-    ('Sake Nigiri (2 St.)',     'Lachs',                         4.80, @catSakSushi),
-    ('Maguro Nigiri (2 St.)',   'Thunfisch',                     5.20, @catSakSushi),
-    ('California Roll (8 St.)', 'Krabben, Avocado, Gurke',       8.90, @catSakSushi),
-    ('Spicy Tuna Roll (8 St.)', 'Thunfisch, Sriracha',           9.50, @catSakSushi),
-    ('Veggie Roll (8 St.)',     'Gurke, Avocado, Karotte',       7.90, @catSakSushi),
-    ('Sashimi Mix (10 St.)',    'Lachs, Thunfisch, Garnele',    16.90, @catSakSushi),
-    ('Dragon Roll (8 St.)',     'Garnele, Avocado, Teriyaki',   12.50, @catSakSushi),
-    ('Edamame',                 'Gesalzen',                      3.50, @catSakSalat),
-    ('Wakame Salat',            'Meeresalgen, Sesam',            4.90, @catSakSalat),
-    ('Gruener Tee',             'Kanne 0,5l',                    3.20, @catSakGetrank),
-    ('Japanisches Bier',        'Asahi 0,33l',                   4.00, @catSakGetrank),
-    ('Sake',                    '0,1l warm',                     5.50, @catSakGetrank),
-    ('Mochi Eis',               'Gruener Tee oder Mango',        4.50, @catSakDessert),
-    ('Dorayaki',                'Japanischer Pancake mit Anko',  3.90, @catSakDessert);
-
-INSERT INTO MenuItem (restaurant_id, name, description, price)
-SELECT @restSakura, name, description, price
-FROM @itemsSakura;
+INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
+    (@restSak, 'Sake Nigiri', 'Lachs (2 Stk.)', 4.80),
+    (@restSak, 'California Roll', 'Avocado & Krabbe (8 Stk.)', 8.90);
 
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT mi.id, i.menu_category_id, @restSakura
-FROM @itemsSakura i
-JOIN MenuItem mi ON mi.restaurant_id = @restSakura AND mi.name = i.name;
+SELECT id, @cSSus, @restSak FROM MenuItem WHERE restaurant_id = @restSak;
 
 INSERT INTO OpeningHourSlot (restaurant_id, day_of_week, open_time, close_time) VALUES
-    (@restSakura, 2, '12:00', '15:00'),
-    (@restSakura, 2, '17:30', '22:30'),
-    (@restSakura, 3, '12:00', '15:00'),
-    (@restSakura, 3, '17:30', '22:30'),
-    (@restSakura, 4, '12:00', '15:00'),
-    (@restSakura, 4, '17:30', '22:30'),
-    (@restSakura, 5, '12:00', '15:00'),
-    (@restSakura, 5, '17:30', '22:30'),
-    (@restSakura, 6, '12:00', '15:00'),
-    (@restSakura, 6, '17:30', '22:30'),
-    (@restSakura, 0, '12:00', '22:00');
+    (@restSak, 0, '12:00', '22:00'), (@restSak, 1, '12:00', '22:00'), (@restSak, 2, '12:00', '22:00'),
+    (@restSak, 3, '12:00', '22:00'), (@restSak, 4, '12:00', '22:00'), (@restSak, 5, '12:00', '22:00'), (@restSak, 6, '12:00', '22:00');
 
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restSakura, 25.00, 8.0);
-SET @zone1Sakura = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES
-    (@zone1Sakura, 40.00,   3.90),
-    (@zone1Sakura, 9999.00, 0.00);
-
-INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restSakura, 30.00, 15.0);
-SET @zone2Sakura = SCOPE_IDENTITY();
-INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@zone2Sakura, 9999.00, 5.90);
-
-PRINT 'Restaurant Sakura Sushi inserted.';
+INSERT INTO DeliveryZone (restaurant_id, min_order_value, max_distance) VALUES (@restSak, 25.00, 12.0);
+SET @z1Sak = SCOPE_IDENTITY();
+INSERT INTO DeliveryFeeRule (delivery_zone_id, max_order_value, delivery_fee) VALUES (@z1Sak, 999.00, 3.90);
 
 -- ============================================================
--- 4. Create 20 Implicit Students (Addresses)
+-- 5. Create 20 Unique Student Locations
 -- ============================================================
-DECLARE @studentId INT = 1;
-DECLARE @studentBaseLat FLOAT = 48.3692;
-DECLARE @studentBaseLon FLOAT = 14.5125;
+DECLARE @Locs TABLE (Id INT IDENTITY(1,1), City NVARCHAR(50), Street NVARCHAR(50), Zip VARCHAR(10), Lat FLOAT, Lon FLOAT);
+INSERT INTO @Locs (City, Street, Zip, Lat, Lon) VALUES
+('Hagenberg', 'Softwarepark', '4232', 48.3692, 14.5125),
+('Hagenberg', 'Hauptstrasse', '4232', 48.3650, 14.5180),
+('Linz', 'Landstrasse', '4020', 48.3000, 14.2900),
+('Linz', 'Hauptplatz', '4020', 48.3060, 14.2860),
+('Linz', 'Urfahr', '4040', 48.3150, 14.2850),
+('Pregarten', 'Stadtplatz', '4230', 48.3550, 14.5300),
+('Freistadt', 'Boehmergasse', '4240', 48.5110, 14.5050),
+('Wien', 'Mariahilfer Strasse', '1070', 48.1990, 16.3450),
+('Wien', 'Stephansplatz', '1010', 48.2085, 16.3731),
+('Wien', 'Praterstern', '1020', 48.2180, 16.3920),
+('Wien', 'Meidling', '1120', 48.1750, 16.3320),
+('Wien', 'Ottakring', '1160', 48.2120, 16.3100),
+('Wien', 'Donaustadt', '1220', 48.2300, 16.4400),
+('Wien', 'Favoriten', '1100', 48.1700, 16.3750),
+('Wien', 'Hietzing', '1130', 48.1850, 16.2700),
+('Linz', 'Bindermichl', '4020', 48.2750, 14.2950),
+('Hagenberg', 'Mahrersdorf', '4232', 48.3750, 14.5250),
+('Wien', 'Floridsdorf', '1210', 48.2550, 16.4000),
+('Linz', 'Ebelsberg', '4030', 48.2450, 14.3300),
+('Wien', 'Simmering', '1110', 48.1750, 16.4150);
 
-WHILE @studentId <= 20
+DECLARE @i INT = 1;
+WHILE @i <= 20
 BEGIN
     INSERT INTO Address (street, number, zip_code, city, country, longitude, latitude, additional_info)
-    VALUES (
-        'Softwarepark', 
-        CAST((20 + @studentId) AS NVARCHAR(10)), 
-        '4232', 
-        'Hagenberg', 
-        'Austria', 
-        @studentBaseLon + (RAND() * 0.005), 
-        @studentBaseLat + (RAND() * 0.005), 
-        'Zimmer ' + CAST((400 + @studentId) AS NVARCHAR(10))
-    );
-    SET @studentId = @studentId + 1;
+    SELECT Street, CAST(@i AS NVARCHAR(10)), Zip, City, 'AT', Lon, Lat, 'Room ' + CAST(400+@i AS NVARCHAR(10))
+    FROM @Locs WHERE Id = @i;
+    SET @i = @i + 1;
 END
 
-PRINT '20 Student addresses inserted.';
+PRINT '20 Unique Student addresses inserted.';
 
 -- ============================================================
--- 5. Create 30 Randomized Orders
+-- 6. Create 30 Geographically Plausible Orders
 -- ============================================================
-DECLARE @orderCounter INT = 1;
-DECLARE @targetRestaurantId INT;
-DECLARE @targetAddressId INT;
-DECLARE @randomStatus INT;
-DECLARE @statusString NVARCHAR(30);
-DECLARE @itemCount INT;
-DECLARE @itemIter INT;
-DECLARE @randomMenuItemId INT;
-DECLARE @randomQuantity INT;
-DECLARE @itemPrice DECIMAL(10,2);
-DECLARE @orderSubtotal DECIMAL(10,2);
-DECLARE @deliveryFee DECIMAL(10,2);
-DECLARE @orderCode VARCHAR(16);
+DECLARE @orderIter INT = 1;
+DECLARE @sAddrId INT;
+DECLARE @rId INT;
+DECLARE @sCity NVARCHAR(50);
+DECLARE @oStatus NVARCHAR(30);
 
--- Wir speichern die IDs der 20 zuletzt angelegten Adressen in einer temp Tabelle
-DECLARE @StudentAddresses TABLE (Id INT IDENTITY(1,1), AddressId INT);
-INSERT INTO @StudentAddresses (AddressId)
-SELECT TOP 20 id FROM Address ORDER BY id DESC;
-
-WHILE @orderCounter <= 30
+WHILE @orderIter <= 30
 BEGIN
-    -- 1. Zufälliges Restaurant (1 bis 3)
-    SET @targetRestaurantId = (CAST(RAND() * 3 AS INT) % 3) + 1;
-    
-    -- 2. Zufällige Studierenden-Adresse (1 bis 20)
-    SELECT @targetAddressId = AddressId FROM @StudentAddresses WHERE Id = (CAST(RAND() * 20 AS INT) % 20) + 1;
+    SELECT TOP 1 @sAddrId = id, @sCity = city FROM Address WHERE id > 3 ORDER BY NEWID();
 
-    -- 3. Zufälliger Status (0 bis 5)
-    SET @randomStatus = CAST(RAND() * 6 AS INT) % 6;
-    SET @statusString = CASE @randomStatus
-        WHEN 0 THEN 'RECEIVED'
-        WHEN 1 THEN 'SENT_TO_RESTAURANT'
-        WHEN 2 THEN 'IN_PREPARATION'
-        WHEN 3 THEN 'OUT_FOR_DELIVERY'
-        WHEN 4 THEN 'DELIVERED'
-        ELSE 'CANCELLED'
-    END;
+    IF @sCity = 'Wien'
+        SET @rId = CASE WHEN RAND() > 0.5 THEN @restBur ELSE @restSak END;
+    ELSE
+        SET @rId = @restNim;
 
-    -- 4. Bestellcode generieren (Simuliert 8 Zeichen)
-    SET @orderCode = SUBSTRING(REPLACE(NEWID(), '-', ''), 1, 8);
+    SET @oStatus = CASE (CAST(RAND()*6 AS INT) % 6)
+        WHEN 0 THEN 'RECEIVED' WHEN 1 THEN 'SENT_TO_RESTAURANT' WHEN 2 THEN 'IN_PREPARATION'
+        WHEN 3 THEN 'OUT_FOR_DELIVERY' WHEN 4 THEN 'DELIVERED' ELSE 'CANCELLED' END;
 
-    -- 5. Vorerst leere Bestellung anlegen
-    SET @deliveryFee = 2.99; -- Dummy Fee für Testdaten
+    DECLARE @oCode VARCHAR(16) = SUBSTRING(REPLACE(NEWID(), '-', ''), 1, 8);
+    DECLARE @fee DECIMAL(10,2) = 2.50;
+
     INSERT INTO CustomerOrder (restaurant_id, address_id, order_code, status, delivery_fee, total)
-    VALUES (@targetRestaurantId, @targetAddressId, @orderCode, @statusString, @deliveryFee, 0);
-    
-    DECLARE @currentOrderId INT = SCOPE_IDENTITY();
-    SET @orderSubtotal = 0;
+    VALUES (@rId, @sAddrId, @oCode, @oStatus, @fee, 0);
 
-    -- 6. 1 bis 3 zufällige Items hinzufügen
-    SET @itemCount = (CAST(RAND() * 3 AS INT) % 3) + 1;
-    SET @itemIter = 1;
+    DECLARE @oId INT = SCOPE_IDENTITY();
+    DECLARE @subtotal DECIMAL(10,2) = 0;
 
-    WHILE @itemIter <= @itemCount
-    BEGIN
-        -- Zufälliges MenuItem des Restaurants holen
-        SELECT TOP 1 @randomMenuItemId = id, @itemPrice = price 
-        FROM MenuItem 
-        WHERE restaurant_id = @targetRestaurantId 
-        ORDER BY NEWID();
+    DECLARE @mId INT; DECLARE @mPrice DECIMAL(10,2);
+    SELECT TOP 1 @mId = id, @mPrice = price FROM MenuItem WHERE restaurant_id = @rId ORDER BY NEWID();
 
-        SET @randomQuantity = (CAST(RAND() * 2 AS INT) % 2) + 1; -- 1 oder 2 Stück
+    INSERT INTO OrderItem (order_id, menu_item_id, quantity, unit_price)
+    VALUES (@oId, @mId, 1, @mPrice);
 
-        INSERT INTO OrderItem (order_id, menu_item_id, quantity, unit_price)
-        VALUES (@currentOrderId, @randomMenuItemId, @randomQuantity, @itemPrice);
+    SET @subtotal = @mPrice;
 
-        SET @orderSubtotal = @orderSubtotal + (@itemPrice * @randomQuantity);
-        SET @itemIter = @itemIter + 1;
-    END
-
-    -- 7. Total in der Bestellung aktualisieren
-    UPDATE CustomerOrder 
-    SET total = @orderSubtotal + @deliveryFee
-    WHERE id = @currentOrderId;
-
-    SET @orderCounter = @orderCounter + 1;
+    UPDATE CustomerOrder SET total = @subtotal + @fee WHERE id = @oId;
+    SET @orderIter = @orderIter + 1;
 END
 
-PRINT '30 Orders with items inserted.';
+PRINT '30 Geographically varied orders inserted.';
 
 PRINT 'Test data filled successfully.';
 
