@@ -3,6 +3,7 @@ using Bite.Api.Dtos;
 using Bite.Api.Dtos.Mappers;
 using Bite.Services.Common;
 using Bite.Services.Interface;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bite.Api.Controllers;
@@ -16,14 +17,14 @@ public class MenuController(IMenuService menuService) : ApiControllerBase
         [FromRoute] int restaurantId,
         CancellationToken cancellationToken)
     {
-        var menu = await menuService.GetMenuAsync(restaurantId, cancellationToken);
+        var result = await menuService.GetMenuAsync(restaurantId, cancellationToken);
 
-        if (menu is null)
+        if (!result.IsSuccess)
         {
-            return NotFound(new { message = "Restaurant not found." });
+            return HandleFailure(result);
         }
 
-        return Ok(menu.ToMenuResponse());
+        return Ok(result.Data!.ToMenuResponse());
     }
 
     [ApiKeyAuth]
@@ -37,7 +38,8 @@ public class MenuController(IMenuService menuService) : ApiControllerBase
 
         if (id != authenticatedRestaurantId)
         {
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "You can only modify your own restaurant." });
         }
 
         var result = await menuService.UpdateMenuAsync(

@@ -70,23 +70,25 @@ public class MenuServiceTests
     // =====================================================================
 
     [Fact]
-    public async Task GetMenuAsync_RestaurantNotFound_ReturnsNull()
+    public async Task GetMenuAsync_RestaurantNotFound_ReturnsNotFound()
     {
         restaurantDao.FindByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
             .Returns((Restaurant?)null);
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var result = await CreateService().GetMenuAsync(RestaurantId);
 
-        Assert.Null(menu);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceResultType.NotFound, result.ResultType);
     }
 
     [Fact]
     public async Task GetMenuAsync_RestaurantExists_ReturnsMenuForRestaurant()
     {
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var result = await CreateService().GetMenuAsync(RestaurantId);
 
-        Assert.NotNull(menu);
-        Assert.Equal(RestaurantId, menu!.RestaurantId);
+        Assert.True(result.IsSuccess);
+        var menu = result.Data!;
+        Assert.Equal(RestaurantId, menu.RestaurantId);
         Assert.Empty(menu.Categories);
     }
 
@@ -100,9 +102,9 @@ public class MenuServiceTests
                 Category(20, "Inactive Category", isActive: false),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        Assert.Single(menu!.Categories);
+        Assert.Single(menu.Categories);
         Assert.Equal("Active Category", menu.Categories.Single().Name);
     }
 
@@ -122,9 +124,9 @@ public class MenuServiceTests
                 Item("Inactive Pizza", id: 2, isActive: false, categoryIds: [10]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        var category = menu!.Categories.Single();
+        var category = menu.Categories.Single();
 
         Assert.Equal("Pizza", category.Name);
         Assert.Single(category.Items);
@@ -148,9 +150,9 @@ public class MenuServiceTests
                 Item("Cola", id: 2, categoryIds: [20]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        var pizzaCategory = menu!.Categories.Single(c => c.Id == 10);
+        var pizzaCategory = menu.Categories.Single(c => c.Id == 10);
         var drinksCategory = menu.Categories.Single(c => c.Id == 20);
 
         Assert.Single(pizzaCategory.Items);
@@ -176,9 +178,9 @@ public class MenuServiceTests
                 Item("Fries", id: 1, categoryIds: [10, 20]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        Assert.Contains(menu!.Categories.Single(c => c.Id == 10).Items, i => i.Name == "Fries");
+        Assert.Contains(menu.Categories.Single(c => c.Id == 10).Items, i => i.Name == "Fries");
         Assert.Contains(menu.Categories.Single(c => c.Id == 20).Items, i => i.Name == "Fries");
     }
 

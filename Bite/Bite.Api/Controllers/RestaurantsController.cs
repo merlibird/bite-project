@@ -5,6 +5,7 @@ using Bite.Domain;
 using Bite.Services.Common;
 using Bite.Services.Interface;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -73,7 +74,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
     [ApiKeyAuth]
     [HttpPut("{id}/delivery-conditions")]
     public async Task<IActionResult> UpdateDeliveryConditions(
-        int id,
+        [FromRoute] int id,
         [FromBody] List<DeliveryZoneDto> request,
         CancellationToken cancellationToken)
     {
@@ -81,7 +82,8 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (id != authenticatedRestaurantId)
         {
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "You can only modify your own restaurant." });
         }
 
         var (deliveryZones, feeRules) = request.ToDomain(id);

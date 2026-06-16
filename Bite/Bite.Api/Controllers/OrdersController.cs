@@ -13,7 +13,7 @@ namespace Bite.Api.Controllers;
 public class OrdersController(IOrderService orderService) : ApiControllerBase
 {
     [HttpGet("{orderCode}/status")]
-    public async Task<IActionResult> GetStatus([FromRoute] string orderCode, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderStatusResponse>> GetStatus([FromRoute] string orderCode, CancellationToken cancellationToken)
     {
         var result = await orderService.GetStatusAsync(orderCode, cancellationToken);
 
@@ -31,7 +31,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
 
     [ApiKeyAuth]
     [HttpPatch("{orderCode}")]
-    public async Task<IActionResult> ChangeStatus(
+    public async Task<ActionResult<OrderStatusResponse>> ChangeStatus(
         [FromRoute] string orderCode,
         [FromBody] ChangeOrderStatusRequest request,
         CancellationToken cancellationToken)
@@ -44,11 +44,10 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
         }
 
         var result = await orderService.ChangeStatusAsync(
-            orderCode, 
-            restaurantId, 
-            OrderStatusExtensions.FromDbValue(request.Status), 
-            cancellationToken
-        );
+            orderCode,
+            restaurantId,
+            OrderStatusExtensions.FromDbValue(request.Status),
+            cancellationToken);
 
         if (!result.IsSuccess)
         {
@@ -64,7 +63,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
 
     [ApiKeyAuth]
     [HttpGet("{orderCode}/status-change/{token}")]
-    public async Task<IActionResult> ApplyStatusToken(
+    public async Task<ActionResult<OrderStatusResponse>> ApplyStatusToken(
         [FromRoute] string orderCode,
         [FromRoute] string token,
         CancellationToken cancellationToken)
@@ -86,7 +85,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
     }
 
     [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
-    public async Task<IActionResult> CalculatePrice(
+    public async Task<ActionResult<Dtos.OrderPriceResponse>> CalculatePrice(
         [FromRoute] int restaurantId,
         [FromBody] OrderRequest request,
         CancellationToken cancellationToken)
