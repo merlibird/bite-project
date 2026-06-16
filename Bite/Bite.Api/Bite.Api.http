@@ -134,7 +134,11 @@ Content-Type: application/json
 # 3. ORDERS CONTROLLER
 # ============================================================
 
+<<<<<<< HEAD
 ### Calculate Order Price Preview (US 7)
+=======
+### Calculate order price
+>>>>>>> origin/develop
 POST {{Bite.Api_HostAddress}}/api/restaurants/1/orders/price
 Content-Type: application/json
 
@@ -156,6 +160,7 @@ Content-Type: application/json
   }
 }
 
+<<<<<<< HEAD
 ###
 
 ### Place a Binding Order (US 8)
@@ -204,3 +209,9 @@ Content-Type: application/json
 GET {{Bite.Api_HostAddress}}/api/orders/MC9QEPB6/status-change/IN_PREPARATION
 X-Api-Key: {{ApiKeyNim}}
 Accept: application/json
+=======
+
+### Get Status of an Order
+
+GET {{Bite.Api_HostAddress}}/api/orders/A6C3DD91/status
+>>>>>>> origin/develop

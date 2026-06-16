@@ -17,8 +17,6 @@ SET NOCOUNT ON;
 -- ============================================================
 -- 1. API KEY HASHING STRATEGY
 -- ============================================================
--- We pre-define known keys and hash them with SHA2_256 (Hex string)
--- to match the C# ApiKeyService logic.
 DECLARE @rawNim VARCHAR(100) = 'nimmersatt-api-key-2026';
 DECLARE @rawBur VARCHAR(100) = 'burger-bude-api-key-2026';
 DECLARE @rawSak VARCHAR(100) = 'sakura-sushi-api-key-2026';
@@ -182,16 +180,13 @@ DECLARE @oStatus NVARCHAR(30);
 
 WHILE @orderIter <= 30
 BEGIN
-    -- Select random student address
     SELECT TOP 1 @sAddrId = id, @sCity = city FROM Address WHERE id > 3 ORDER BY NEWID();
 
-    -- Pick a restaurant that makes sense for the location
     IF @sCity = 'Wien'
         SET @rId = CASE WHEN RAND() > 0.5 THEN @restBur ELSE @restSak END;
     ELSE
         SET @rId = @restNim;
 
-    -- Pick random status
     SET @oStatus = CASE (CAST(RAND()*6 AS INT) % 6)
         WHEN 0 THEN 'RECEIVED' WHEN 1 THEN 'SENT_TO_RESTAURANT' WHEN 2 THEN 'IN_PREPARATION'
         WHEN 3 THEN 'OUT_FOR_DELIVERY' WHEN 4 THEN 'DELIVERED' ELSE 'CANCELLED' END;
@@ -205,7 +200,6 @@ BEGIN
     DECLARE @oId INT = SCOPE_IDENTITY();
     DECLARE @subtotal DECIMAL(10,2) = 0;
 
-    -- Add 1-2 random items from that restaurant
     DECLARE @mId INT; DECLARE @mPrice DECIMAL(10,2);
     SELECT TOP 1 @mId = id, @mPrice = price FROM MenuItem WHERE restaurant_id = @rId ORDER BY NEWID();
 
@@ -219,6 +213,7 @@ BEGIN
 END
 
 PRINT '30 Geographically varied orders inserted.';
+
 PRINT 'Test data filled successfully.';
 
 EndOfScript:

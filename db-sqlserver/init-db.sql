@@ -19,6 +19,7 @@ USE BiteTestDb;
 GO
 
 -- 2. Delete existing tables (if any)
+DROP TABLE IF EXISTS WebhookOutbox;
 DROP TABLE IF EXISTS OrderStatusToken;
 DROP TABLE IF EXISTS OrderItem;
 DROP TABLE IF EXISTS CustomerOrder;
@@ -180,6 +181,22 @@ CREATE TABLE OrderStatusToken (
 );
 PRINT 'Table "OrderStatusToken" created.';
 
+CREATE TABLE WebhookOutbox (
+    id              INT IDENTITY(1,1),
+    order_id        INT            NOT NULL,
+    url             NVARCHAR(2048) NOT NULL,
+    payload         NVARCHAR(MAX)  NOT NULL,
+    status          NVARCHAR(20)   NOT NULL DEFAULT 'PENDING',
+    attempts        INT            NOT NULL DEFAULT 0,
+    next_attempt_at DATETIME       NOT NULL DEFAULT GETUTCDATE(),
+    created_at      DATETIME       DEFAULT GETDATE(),
+    updated_at      DATETIME       DEFAULT GETDATE(),
+    CONSTRAINT PK_WebhookOutbox PRIMARY KEY (id),
+    CONSTRAINT CK_WebhookOutbox_Status CHECK (status IN ('PENDING', 'SENT', 'FAILED')),
+    CONSTRAINT FK_WebhookOutbox_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE
+);
+PRINT 'Table "WebhookOutbox" created.';
+
 PRINT 'All tables created successfully.';
 GO
 
@@ -222,4 +239,17 @@ BEGIN
     WHERE id IN (SELECT id FROM inserted);
 END;
 PRINT 'Trigger "TR_CustomerOrder_UpdatedAt" created.';
+GO
+
+CREATE TRIGGER TR_WebhookOutbox_UpdatedAt
+ON WebhookOutbox
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE WebhookOutbox
+    SET updated_at = GETDATE()
+    WHERE id IN (SELECT id FROM inserted);
+END;
+PRINT 'Trigger "TR_WebhookOutbox_UpdatedAt" created.';
 GO

@@ -11,4 +11,6 @@ public interface ICustomerOrderDao
     Task<CustomerOrder?> FindByOrderCodeAsync(string orderCode, CancellationToken cancellationToken = default);
 
     Task<bool> UpdateStatusAsync(int id, OrderStatus status, CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateStatusIfAsync(int id, OrderStatus expectedCurrentStatus, OrderStatus newStatus, CancellationToken cancellationToken = default);
 }

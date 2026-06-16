@@ -65,4 +65,17 @@ public class CustomerOrderDao(IConnectionFactory connectionFactory) : ICustomerO
             cancellationToken
         ) == 1;
     }
+
+    public async Task<bool> UpdateStatusIfAsync(int id, OrderStatus expectedCurrentStatus, OrderStatus newStatus, CancellationToken cancellationToken = default)
+    {
+        return await template.ExecuteAsync(
+            "update CustomerOrder set status=@newStatus where id=@id and status=@expectedStatus",
+            [
+            new QueryParameter("@newStatus", newStatus.ToDbValue()),
+            new QueryParameter("@expectedStatus", expectedCurrentStatus.ToDbValue()),
+            new QueryParameter("@id", id)
+            ],
+            cancellationToken
+        ) == 1;
+    }
 }
