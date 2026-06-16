@@ -69,6 +69,7 @@ CREATE TABLE MenuCategory (
     id            INT IDENTITY(1,1),
     restaurant_id INT          NOT NULL,
     name          NVARCHAR(50) NOT NULL,
+    is_active     BIT          NOT NULL DEFAULT 1,
     CONSTRAINT PK_MenuCategory PRIMARY KEY (id),
     CONSTRAINT UQ_MenuCategory_Restaurant_Name UNIQUE (restaurant_id, name),
     CONSTRAINT UQ_MenuCategory_Id_Restaurant UNIQUE (id, restaurant_id),

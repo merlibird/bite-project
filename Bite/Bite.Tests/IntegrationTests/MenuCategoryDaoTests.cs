@@ -26,8 +26,15 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     // beforeEach --> clear all tables in FK-safe order
     public async Task InitializeAsync()
     {
+        await template.ExecuteAsync("delete from OrderStatusToken", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OrderItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from CustomerOrder", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItemMenuCategory", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OpeningHourSlot", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryFeeRule", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryZone", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }
@@ -114,14 +121,16 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     {
         int restaurantId = await SeedRestaurantAsync();
         string name = "Hauptspeisen";
+        bool isActive = false;
 
-        var id = await dao.InsertAsync(MakeMenuCategory(name, restaurantId));
+        var id = await dao.InsertAsync(new MenuCategory(0, restaurantId, name, isActive));
 
         var result = await dao.FindByIdAsync(id);
 
         Assert.NotNull(result);
         Assert.Equal(name, result.Name);
         Assert.Equal(restaurantId, result.RestaurantId);
+        Assert.Equal(isActive, result.IsActive);
     }
 
     // -------------------------------------------------------------------------
@@ -132,7 +141,7 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public async Task InsertAsync_ValidMenuCategory_ReturnsNewId()
     {
         int restaurantId = await SeedRestaurantAsync();
-        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
+        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
 
         Assert.True(id > 0);
     }
@@ -141,8 +150,8 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public async Task InsertAsync_TwoMenuCategories_ReturnsDifferentIds()
     {
         int restaurantId = await SeedRestaurantAsync();
-        var id1 = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
-        var id2 = await dao.InsertAsync(MakeMenuCategory("Hauptspeisen", restaurantId));
+        var id1 = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
+        var id2 = await dao.InsertAsync(MakeMenuCategory("Hauptspeisen", restaurantId, true));
 
         Assert.NotEqual(id1, id2);
     }
@@ -155,7 +164,7 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public async Task UpdateAsync_ExistingMenuCategory_ReturnsTrue()
     {
         int restaurantId = await SeedRestaurantAsync();
-        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
+        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
         var category = await dao.FindByIdAsync(id);
 
         var result = await dao.UpdateAsync(category!);
@@ -168,7 +177,7 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     {
         int restaurantId = await SeedRestaurantAsync();
         // not using MakeMenuCategory() to avoid inserting a new category with id=0
-        var ghost = new MenuCategory(69420, restaurantId, "Ghost Category");
+        var ghost = new MenuCategory(69420, restaurantId, "Ghost Category", true);
 
         var result = await dao.UpdateAsync(ghost);
 
@@ -180,15 +189,18 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     {
         int restaurantId = await SeedRestaurantAsync();
         string updatedName = "Desserts";
+        bool updatedActive = false;
 
-        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
+        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
         var category = await dao.FindByIdAsync(id);
         category!.Name = updatedName;
+        category!.IsActive = updatedActive;
 
         await dao.UpdateAsync(category);
 
         var updated = await dao.FindByIdAsync(id);
         Assert.Equal(updatedName, updated!.Name);
+        Assert.Equal(updatedActive, updated!.IsActive);
     }
 
     // -------------------------------------------------------------------------
@@ -199,7 +211,7 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public async Task DeleteAsync_ExistingId_ReturnsTrue()
     {
         int restaurantId = await SeedRestaurantAsync();
-        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
+        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
         var category = await dao.FindByIdAsync(id);
 
         var result = await dao.DeleteAsync(category!.Id);
@@ -211,7 +223,7 @@ public class MenuCategoryDaoTests : IAsyncLifetime
     public async Task DeleteAsync_ExistingId_CanNoLongerBeFound()
     {
         int restaurantId = await SeedRestaurantAsync();
-        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId));
+        var id = await dao.InsertAsync(MakeMenuCategory("Vorspeisen", restaurantId, true));
         await dao.DeleteAsync(id);
 
         var result = await dao.FindByIdAsync(id);
@@ -232,8 +244,9 @@ public class MenuCategoryDaoTests : IAsyncLifetime
 
     private static MenuCategory MakeMenuCategory(
         string name,
-        int restaurantId) =>
-            new MenuCategory(0, restaurantId, name);
+        int restaurantId,
+        bool isActive = true) =>
+            new MenuCategory(0, restaurantId, name, isActive);
 
     private async Task<int> SeedAddressAsync() =>
         await addressDao.InsertAsync(

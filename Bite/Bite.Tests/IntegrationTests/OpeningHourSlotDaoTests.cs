@@ -26,7 +26,15 @@ public class OpeningHourSlotDaoTests : IAsyncLifetime
     // beforeEach --> clear all tables in FK-safe order
     public async Task InitializeAsync()
     {
+        await template.ExecuteAsync("delete from OrderStatusToken", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OrderItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from CustomerOrder", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItemMenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from OpeningHourSlot", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryFeeRule", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryZone", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }

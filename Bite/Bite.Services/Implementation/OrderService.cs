@@ -270,11 +270,7 @@ public class OrderService(
         if (rules.Count == 0)
         {
             // If a zone exists but no rules are defined, it's considered non-deliverable
-<<<<<<< HEAD
-            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery defined for this area.", ServiceResultType.ValidationError);
-=======
             return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery rules defined for this area.", ServiceResultType.ValidationError);
->>>>>>> origin/develop
         }
 
         decimal deliveryFee = 0;

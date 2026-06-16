@@ -11,17 +11,18 @@ public static class MenuMapper
             restaurantId: restaurantId,
             categories: (request.Categories ?? [])
                 .Select(category => new MenuCategoryWithItems(
-                    id: 0,
+                    id: category.Id,
                     name: category.Name,
                     items: (category.Items ?? [])
                         .Select(item => new MenuItem(
-                            id: 0,
+                            id: item.Id,
                             restaurantId: restaurantId,
                             name: item.Name,
                             description: item.Description,
                             price: item.Price,
                             isActive: item.IsActive))
-                        .ToList()))
+                        .ToList(),
+                    isActive: category.IsActive))
                 .ToList());
     }
 
@@ -35,6 +36,7 @@ public static class MenuMapper
                 {
                     Id = category.Id,
                     Name = category.Name,
+                    IsActive = category.IsActive,
                     Items = category.Items
                         .Select(item => new MenuItemDto
                         {
