@@ -1,7 +1,7 @@
 namespace Bite.Api.Dtos;
 
-public class DeliveryFeeRuleDto
+public record DeliveryFeeRuleDto
 {
-    public decimal MaxOrderValue { get; set; }
-    public decimal DeliveryFee { get; set; }
+    public decimal MaxOrderValue { get; init; }
+    public decimal DeliveryFee { get; init; }
 }

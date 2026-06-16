@@ -2,27 +2,27 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Bite.Api.Dtos;
 
-public class UpdateMenuRequest
+public record UpdateMenuRequest
 {
-    public List<UpdateMenuCategoryRequest> Categories { get; set; } = [];
+    public List<UpdateMenuCategoryDto> Categories { get; init; } = [];
 }
 
-public class UpdateMenuCategoryRequest
+public record UpdateMenuCategoryDto
 {
     [Required]
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
 
-    public List<UpdateMenuItemRequest> Items { get; set; } = [];
+    public List<UpdateMenuItemDto> Items { get; init; } = [];
 }
 
-public class UpdateMenuItemRequest
+public record UpdateMenuItemDto
 {
     [Required]
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
 
-    public string? Description { get; set; }
+    public string? Description { get; init; }
 
-    public decimal Price { get; set; }
+    public decimal Price { get; init; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; init; } = true;
 }

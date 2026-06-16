@@ -1,12 +1,12 @@
 namespace Bite.Api.Dtos;
 
-public record OrderPriceRequestDto
+public record OrderRequest
 {
-    public List<OrderItemRequestDto> Items { get; init; } = [];
+    public List<OrderItemDto> Items { get; init; } = [];
     public RestaurantAddressDto DeliveryAddress { get; init; } = new();
 }
 
-public record OrderItemRequestDto
+public record OrderItemDto
 {
     public int MenuItemId { get; init; }
     public int Quantity { get; init; }

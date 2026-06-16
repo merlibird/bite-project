@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-
 namespace Bite.Api.Dtos;
 
-public class DeliveryZoneDto
+public record DeliveryZoneDto
 {
-    public double MaxDistance { get; set; }
-    public decimal MinOrderValue { get; set; }
-    public List<DeliveryFeeRuleDto> FeeRules { get; set; } = [];
+    public double MaxDistance { get; init; }
+    public decimal MinOrderValue { get; init; }
+    public List<DeliveryFeeRuleDto> FeeRules { get; init; } = [];
 }

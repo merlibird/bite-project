@@ -16,7 +16,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
     IWebHostEnvironment env) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<RestaurantSearchResultDto>> SearchRestaurants(
+    public async Task<ActionResult<RestaurantSearchResult>> SearchRestaurants(
     [FromQuery, Range(-90, 90)] double latitude,
     [FromQuery, Range(-180, 180)] double longitude,
     [FromQuery] bool openNow = false,
@@ -30,7 +30,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
             count,
             cancellationToken);
 
-        return Ok(restaurants.ToRestaurantSearchResultDto(latitude, longitude, openNow, count));
+        return Ok(restaurants.ToRestaurantSearchResult(latitude, longitude, openNow, count));
     }
 
     [HttpPost]

@@ -1,6 +1,6 @@
 namespace Bite.Api.Dtos;
 
-public record OrderPriceResponseDto
+public record OrderPriceResponse
 {
     public decimal Subtotal { get; init; }
     public decimal DeliveryFee { get; init; }

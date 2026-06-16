@@ -81,7 +81,7 @@ public static class RestaurantMapper
         return (deliveryZones, feeRules);
     }
 
-    public static RestaurantSearchResultDto ToRestaurantSearchResultDto(
+    public static RestaurantSearchResult ToRestaurantSearchResult(
         this IReadOnlyCollection<(
             Restaurant Restaurant,
             Address Address,
@@ -93,7 +93,7 @@ public static class RestaurantMapper
         bool openNowOnly,
         int count)
     {
-        return new RestaurantSearchResultDto
+        return new RestaurantSearchResult
         {
             Latitude = latitude,
             Longitude = longitude,
