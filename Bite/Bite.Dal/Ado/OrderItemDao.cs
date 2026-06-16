@@ -9,25 +9,6 @@ public class OrderItemDao(IConnectionFactory connectionFactory) : IOrderItemDao
 {
     private readonly AdoTemplate template = new AdoTemplate(connectionFactory);
 
-    private OrderItem MapRowToOrderItem(IDataRecord row)
-    {
-        return new OrderItem(
-            id: (int)row["id"],
-            orderId: (int)row["order_id"],
-            menuItemId: (int)row["menu_item_id"],
-            quantity: (int)row["quantity"],
-            unitPrice: (decimal)row["unit_price"]);
-    }
-
-    public async Task<IEnumerable<OrderItem>> FindByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
-    {
-        return await template.QueryAsync(
-            "select * from OrderItem where order_id=@orderId",
-            MapRowToOrderItem,
-            [new QueryParameter("@orderId", orderId)],
-            cancellationToken);
-    }
-
     public async Task<int> InsertAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(

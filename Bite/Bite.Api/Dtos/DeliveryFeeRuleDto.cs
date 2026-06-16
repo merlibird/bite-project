@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Bite.Api.Dtos;
 
-public class DeliveryFeeRuleDto
+public record DeliveryFeeRuleDto
 {
-    public decimal MaxOrderValue { get; set; }
-    public decimal DeliveryFee { get; set; }
+    [Range(0, 100000)]
+    public decimal MaxOrderValue { get; init; }
+
+    [Range(0, 100000)]
+    public decimal DeliveryFee { get; init; }
 }

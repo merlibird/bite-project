@@ -1,9 +1,9 @@
 ﻿namespace Bite.Api.Dtos;
 public record MenuItemDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public string? Description { get; set; }
-    public decimal Price { get; set; }
-    public bool IsActive { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public string? Description { get; init; }
+    public decimal Price { get; init; }
+    public bool IsActive { get; init; }
 }

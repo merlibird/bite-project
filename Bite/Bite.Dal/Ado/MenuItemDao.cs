@@ -67,18 +67,6 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 
     private static object NullableParam(object? value) => value ?? DBNull.Value;
 
-    public async Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await template.QueryAsync(
-            $"""
-            {MenuItemSelect}
-            {MenuItemGroupBy}
-            """,
-            MapRowToMenuItem,
-            [],
-            cancellationToken);
-    }
-
     public async Task<MenuItem?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
@@ -102,24 +90,6 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             """,
             MapRowToMenuItem,
             [new QueryParameter("@restaurantId", restaurantId)],
-            cancellationToken);
-    }
-
-    public async Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId, CancellationToken cancellationToken = default)
-    {
-        return await template.QueryAsync(
-            $"""
-            {MenuItemSelect}
-            where exists (
-                select 1
-                from MenuItemMenuCategory mimcFilter
-                where mimcFilter.menu_item_id = mi.id
-                    and mimcFilter.menu_category_id = @menuCategoryId
-            )
-            {MenuItemGroupBy}
-            """,
-            MapRowToMenuItem,
-            [new QueryParameter("@menuCategoryId", menuCategoryId)],
             cancellationToken);
     }
 

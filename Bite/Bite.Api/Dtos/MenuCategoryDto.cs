@@ -3,8 +3,8 @@
 
 public record MenuCategoryDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public List<MenuItemDto> Items { get; set; } = [];
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public List<MenuItemDto> Items { get; init; } = [];
 }
 

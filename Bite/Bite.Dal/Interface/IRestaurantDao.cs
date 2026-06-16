@@ -17,8 +17,4 @@ public interface IRestaurantDao
     Task<Restaurant?> FindByNameAndCityAsync(string name, string city, CancellationToken cancellationToken = default);
 
     Task<int> InsertAsync(Restaurant restaurant, CancellationToken cancellationToken = default);
-
-    Task<bool> UpdateAsync(Restaurant restaurant, CancellationToken cancellationToken = default);
-
-    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

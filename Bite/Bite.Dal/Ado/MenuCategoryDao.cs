@@ -22,11 +22,6 @@ public class MenuCategoryDao(IConnectionFactory connectionFactory) : IMenuCatego
             name: (string)row["name"]);
     }
 
-    public async Task<IEnumerable<MenuCategory>> FindAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await template.QueryAsync("select * from MenuCategory", MapRowToMenuCategory, [], cancellationToken);
-    }
-
     public async Task<MenuCategory?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(

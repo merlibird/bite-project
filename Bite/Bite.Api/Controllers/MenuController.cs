@@ -12,7 +12,7 @@ namespace Bite.Api.Controllers;
 public class MenuController(IMenuService menuService) : ControllerBase
 {
     [HttpGet("{restaurantId:int}/menu")]
-    public async Task<ActionResult<MenuDto>> FindMenuByRestaurantId(
+    public async Task<ActionResult<MenuResponse>> FindMenuByRestaurantId(
         [FromRoute] int restaurantId,
         CancellationToken cancellationToken)
     {
@@ -23,12 +23,12 @@ public class MenuController(IMenuService menuService) : ControllerBase
             return NotFound();
         }
 
-        return Ok(menu.ToMenuDto());
+        return Ok(menu.ToMenuResponse());
     }
 
     [ApiKeyAuth]
     [HttpPut("{id:int}/menu")]
-    public async Task<ActionResult<MenuDto>> UpdateMenu(
+    public async Task<ActionResult<MenuResponse>> UpdateMenu(
         [FromRoute] int id,
         [FromBody] UpdateMenuRequest request,
         CancellationToken cancellationToken)
@@ -50,11 +50,10 @@ public class MenuController(IMenuService menuService) : ControllerBase
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }
 
-        return Ok(result.Data!.ToMenuDto());
+        return Ok(result.Data!.ToMenuResponse());
     }
 }

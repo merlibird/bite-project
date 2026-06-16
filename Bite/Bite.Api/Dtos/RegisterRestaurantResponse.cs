@@ -1,7 +1,7 @@
 namespace Bite.Api.Dtos;
 
-public class RegisterRestaurantResponse
+public record RegisterRestaurantResponse
 {
-    public int RestaurantId { get; set; }
-    public string ApiKey { get; set; } = string.Empty;
+    public int RestaurantId { get; init; }
+    public string ApiKey { get; init; } = string.Empty;
 }
