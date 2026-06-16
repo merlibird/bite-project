@@ -29,7 +29,7 @@ public sealed class WebhookOutboxWorker(
         }
     }
 
-    private async Task ProcessDueAsync(CancellationToken stoppingToken)
+    internal async Task ProcessDueAsync(CancellationToken stoppingToken)
     {
         // This is a singleton background service, so we create a scope to get scoped services
         using var scope = scopeFactory.CreateScope();
