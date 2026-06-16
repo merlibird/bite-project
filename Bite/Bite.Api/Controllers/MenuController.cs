@@ -9,7 +9,7 @@ namespace Bite.Api.Controllers;
 
 [ApiController]
 [Route("api/restaurants")]
-public class MenuController(IMenuService menuService) : ControllerBase
+public class MenuController(IMenuService menuService) : ApiControllerBase
 {
     [HttpGet("{restaurantId:int}/menu")]
     public async Task<ActionResult<MenuResponse>> FindMenuByRestaurantId(
@@ -47,12 +47,7 @@ public class MenuController(IMenuService menuService) : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return Ok(result.Data!.ToMenuResponse());

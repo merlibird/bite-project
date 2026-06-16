@@ -12,8 +12,8 @@ namespace Bite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RestaurantsController(IRestaurantService restaurantService, 
-    IWebHostEnvironment env) : ControllerBase
+public class RestaurantsController(IRestaurantService restaurantService,
+    IWebHostEnvironment env) : ApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<RestaurantSearchResult>> SearchRestaurants(
@@ -58,11 +58,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         var (restaurantId, rawApiKey) = result.Data;
@@ -98,11 +94,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return NoContent();
