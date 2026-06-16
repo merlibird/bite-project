@@ -9,6 +9,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Bite.Dal\Bite.Dal.csproj" />
+		<ProjectReference Include="..\Bite.Services\Bite.Services.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

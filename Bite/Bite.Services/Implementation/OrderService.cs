@@ -15,7 +15,8 @@ public class OrderService(
     IDeliveryZoneDao deliveryZoneDao,
     IDeliveryFeeRuleDao deliveryFeeRuleDao,
     IOrderCodeService orderCodeService,
-    IOrderItemDao orderItemDao) : IOrderService
+    IOrderItemDao orderItemDao,
+    IOrderWebhookService orderWebhookService) : IOrderService
 {
     public async Task<ServiceResult<OrderStatus>> GetStatusAsync(string orderCode, CancellationToken cancellationToken = default)
     {
@@ -184,6 +185,18 @@ public class OrderService(
             );
             await orderItemDao.InsertAsync(orderItem, cancellationToken);
         }
+
+        // 5. Notify via Webhook (add to outbox for async processing)
+        var createdOrder = new CustomerOrder(
+            id: orderId,
+            restaurantId: restaurantId,
+            addressId: addressId,
+            orderCode: orderCode,
+            status: OrderStatus.Received,
+            deliveryFee: deliveryFee,
+            total: subtotal + deliveryFee);
+
+        await orderWebhookService.NotifyOrderCreatedAsync(createdOrder, deliveryAddress, validatedItems, cancellationToken);
 
         scope.Complete();
 

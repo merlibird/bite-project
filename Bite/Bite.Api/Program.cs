@@ -1,3 +1,4 @@
+using Bite.Api.Webhooks;
 using Bite.Dal.Ado;
 using Bite.Dal.Common;
 using Bite.Dal.Interface;
@@ -41,6 +42,11 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderCodeService, OrderCodeService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
+// Webhook services
+builder.Services.AddSingleton<IWebhookSender, WebhookSender>();
+builder.Services.AddScoped<IOrderWebhookService, OrderWebhookService>();
+builder.Services.AddHostedService<WebhookOutboxWorker>();
+
 // DAOs
 builder.Services.AddScoped<IRestaurantDao, RestaurantDao>();
 builder.Services.AddScoped<IAddressDao, AddressDao>();
@@ -52,6 +58,7 @@ builder.Services.AddScoped<IOrderItemDao, OrderItemDao>();
 builder.Services.AddScoped<IOrderStatusTokenDao, OrderStatusTokenDao>();
 builder.Services.AddScoped<IMenuCategoryDao, MenuCategoryDao>();
 builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
+builder.Services.AddScoped<IWebhookOutboxDao, WebhookOutboxDao>();
 
 var app = builder.Build();
 
