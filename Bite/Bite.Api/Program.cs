@@ -1,3 +1,4 @@
+using Bite.Api.Middleware;
 using Bite.Api.Webhooks;
 using Bite.Dal.Ado;
 using Bite.Dal.Common;
@@ -26,6 +27,10 @@ builder.Services.AddOpenApiDocument(settings =>
 });
 
 builder.Services.AddCors();
+
+// Middleware for global exception handling
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // ConnectionFactory
 builder.Services.AddSingleton<IConnectionFactory>(_ =>
@@ -61,6 +66,9 @@ builder.Services.AddScoped<IMenuItemDao, MenuItemDao>();
 builder.Services.AddScoped<IWebhookOutboxDao, WebhookOutboxDao>();
 
 var app = builder.Build();
+
+// First in the pipeline so it wraps everything (controllers, filters, model binding).
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
