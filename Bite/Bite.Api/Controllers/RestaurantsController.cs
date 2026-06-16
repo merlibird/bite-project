@@ -101,7 +101,6 @@ public class RestaurantsController(IRestaurantService restaurantService,
             return result.ResultType switch
             {
                 ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.Unauthorized => Unauthorized(new { message = result.ErrorMessage }),
                 _ => BadRequest(new { message = result.ErrorMessage })
             };
         }
