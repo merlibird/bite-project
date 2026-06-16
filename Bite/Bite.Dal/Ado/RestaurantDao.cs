@@ -94,33 +94,4 @@ public class RestaurantDao(IConnectionFactory connectionFactory) : IRestaurantDa
         );
     }
 
-    public async Task<bool> UpdateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            """
-            update Restaurant
-            set name=@name, address_id=@addressId, webhook_url=@webhook, title_image_path=@image
-            where id=@id
-            """,
-            [
-            new QueryParameter("@name", restaurant.Name),
-            new QueryParameter("@addressId", restaurant.AddressId),
-            new QueryParameter("@webhook", restaurant.WebhookUrl),
-            new QueryParameter("@image", restaurant.TitleImagePath),
-            new QueryParameter("@id", restaurant.Id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
-
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            "delete from Restaurant where id=@id",
-            [
-            new QueryParameter("@id", id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
 }
