@@ -251,4 +251,34 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
         scope.Complete();
         return deletedItems;
     }
+
+    public async Task<bool> DeactivateAndClearMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        // 1. Remove mapping between items and categories for this restaurant
+        await template.ExecuteAsync(
+            "delete from MenuItemMenuCategory where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        // 2. Try to delete items that have NO orders
+        await template.ExecuteAsync(
+            """
+            delete from MenuItem 
+            where restaurant_id = @restaurantId 
+            and not exists (select 1 from OrderItem where menu_item_id = MenuItem.id);
+            """,
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        // 3. Deactivate remaining items (those with orders)
+        await template.ExecuteAsync(
+            "update MenuItem set is_active = 0 where restaurant_id = @restaurantId and is_active = 1;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        scope.Complete();
+        return true;
+    }
 }

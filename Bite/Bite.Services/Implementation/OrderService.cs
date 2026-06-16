@@ -236,6 +236,7 @@ public class OrderService(
         var zones = (await deliveryZoneDao.FindByRestaurantIdAsync(restaurantId, cancellationToken))
             .Where(z => distance <= z.MaxDistance)
             .OrderBy(z => z.MaxDistance)
+            .ThenBy(z => z.MinOrderValue)
             .ToList();
 
         if (zones.Count == 0)
@@ -256,7 +257,7 @@ public class OrderService(
         if (rules.Count == 0)
         {
             // If a zone exists but no rules are defined, it's considered non-deliverable
-            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery rules defined for this area.", ServiceResultType.ValidationError);
+            return ServiceResult<(decimal, decimal, List<(MenuItem, int)>)>.Failure("No delivery defined for this area.", ServiceResultType.ValidationError);
         }
 
         decimal deliveryFee = 0;

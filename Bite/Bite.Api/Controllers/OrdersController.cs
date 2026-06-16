@@ -96,11 +96,6 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         });
     }
 
-    //warum wollten wir das über restaurants haben?
-    //Weil es einfacher ist, die Berechtigungen zu überprüfen,
-    //wenn die Restaurant-ID in der URL enthalten ist? So können
-    //wir sicherstellen, dass nur berechtigte Restaurants den Status
-    //ihrer eigenen Bestellungen ändern können????
     [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
     public async Task<IActionResult> CalculatePrice(
         [FromRoute] int restaurantId,

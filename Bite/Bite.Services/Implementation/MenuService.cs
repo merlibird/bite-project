@@ -53,36 +53,37 @@ public class MenuService(
             return ServiceResult<Menu>.Failure(validationError);
         }
 
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
-        await menuItemDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-        await menuCategoryDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
-
-        foreach (var category in menu.Categories)
+        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            int categoryId = await menuCategoryDao.InsertAsync(
-                new MenuCategory(
-                    id: 0,
-                    restaurantId: restaurantId,
-                    name: category.Name.Trim()),
-                cancellationToken);
+            await menuItemDao.DeactivateAndClearMenuAsync(restaurantId, cancellationToken);
+            await menuCategoryDao.DeleteAllByRestaurantIdAsync(restaurantId, cancellationToken);
 
-            foreach (var item in category.Items)
+            foreach (var category in menu.Categories)
             {
-                await menuItemDao.InsertAsync(
-                    new MenuItem(
+                int categoryId = await menuCategoryDao.InsertAsync(
+                    new MenuCategory(
                         id: 0,
                         restaurantId: restaurantId,
-                        name: item.Name.Trim(),
-                        description: string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
-                        price: item.Price,
-                        isActive: item.IsActive,
-                        menuCategoryIds: [categoryId]),
+                        name: category.Name.Trim()),
                     cancellationToken);
-            }
-        }
 
-        scope.Complete();
+                foreach (var item in category.Items)
+                {
+                    await menuItemDao.InsertAsync(
+                        new MenuItem(
+                            id: 0,
+                            restaurantId: restaurantId,
+                            name: item.Name.Trim(),
+                            description: string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim(),
+                            price: item.Price,
+                            isActive: item.IsActive,
+                            menuCategoryIds: [categoryId]),
+                        cancellationToken);
+                }
+            }
+
+            scope.Complete();
+        }
 
         var updatedMenu = await GetMenuAsync(restaurantId, cancellationToken);
         return ServiceResult<Menu>.Success(updatedMenu!);
