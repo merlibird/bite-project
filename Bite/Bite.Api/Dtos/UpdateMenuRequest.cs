@@ -17,7 +17,7 @@ public record UpdateMenuCategoryDto
 
     public bool IsActive { get; set; } = true;
 
-    public List<UpdateMenuItemRequest> Items { get; set; } = [];
+    public List<UpdateMenuItemDto> Items { get; set; } = [];
 }
 
 public record UpdateMenuItemDto
