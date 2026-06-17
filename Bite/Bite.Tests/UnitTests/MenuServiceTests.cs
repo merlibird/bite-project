@@ -1,160 +1,3 @@
-//using Bite.Dal.Interface;
-//using Bite.Domain;
-//using Bite.Services.Common;
-//using Bite.Services.Implementation;
-//using NSubstitute;
-
-//namespace Bite.Tests.UnitTests;
-
-//public class MenuServiceTests
-//{
-//    private const int RestaurantId = 1;
-
-//    private readonly IRestaurantDao restaurantDao = Substitute.For<IRestaurantDao>();
-//    private readonly IMenuCategoryDao menuCategoryDao = Substitute.For<IMenuCategoryDao>();
-//    private readonly IMenuItemDao menuItemDao = Substitute.For<IMenuItemDao>();
-
-//    public MenuServiceTests()
-//    {
-//        restaurantDao.FindByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new Restaurant(RestaurantId, "Test", 1, "https://hook", "key"));
-        
-//        menuCategoryDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(Array.Empty<MenuCategory>());
-//        menuItemDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(Array.Empty<MenuItem>());
-//    }
-
-//    private MenuService CreateService() => new(restaurantDao, menuCategoryDao, menuItemDao);
-
-//    private static Menu MenuWith(string categoryName, params MenuItem[] items)
-//        => new(RestaurantId, [new MenuCategoryWithItems(0, categoryName, items)]);
-
-//    private static MenuItem Item(string name, decimal price = 5m, int id = 0)
-//        => new(id, RestaurantId, name, null, price, isActive: true);
-
-//    // =====================================================================
-//    // GetMenuAsync
-//    // =====================================================================
-
-//    [Fact]
-//    public async Task GetMenuAsync_RestaurantNotFound_ReturnsNull()
-//    {
-//        restaurantDao.FindByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns((Restaurant?)null);
-
-//        var menu = await CreateService().GetMenuAsync(RestaurantId);
-
-//        Assert.Null(menu);
-//    }
-
-//    [Fact]
-//    public async Task GetMenuAsync_FiltersInactiveCategoriesAndItems()
-//    {
-//        menuCategoryDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[]
-//            {
-//                new MenuCategory(10, RestaurantId, "Active Cat", true),
-//                new MenuCategory(20, RestaurantId, "Inactive Cat", false),
-//            });
-//        menuItemDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[]
-//            {
-//                new MenuItem(1, RestaurantId, "Active Item", null, 9m, true, menuCategoryIds: [10]),
-//                new MenuItem(2, RestaurantId, "Inactive Item", null, 3m, false, menuCategoryIds: [10]),
-//            });
-
-//        var menu = await CreateService().GetMenuAsync(RestaurantId);
-
-//        Assert.Single(menu!.Categories);
-//        Assert.Equal("Active Cat", menu.Categories.First().Name);
-//        Assert.Single(menu.Categories.First().Items);
-//        Assert.Equal("Active Item", menu.Categories.First().Items.First().Name);
-//    }
-
-//    // =====================================================================
-//    // UpdateMenuAsync
-//    // =====================================================================
-
-//    [Fact]
-//    public async Task UpdateMenuAsync_RestaurantNotFound_ReturnsNotFound()
-//    {
-//        restaurantDao.FindByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns((Restaurant?)null);
-
-//        var result = await CreateService().UpdateMenuAsync(RestaurantId, MenuWith("Drinks", Item("Cola")));
-
-//        Assert.False(result.IsSuccess);
-//        Assert.Equal(ServiceResultType.NotFound, result.ResultType);
-//    }
-
-//    [Fact]
-//    public async Task UpdateMenuAsync_StandardizesResponseWithServiceResult()
-//    {
-//        var result = await CreateService().UpdateMenuAsync(RestaurantId, MenuWith("Drinks", Item("Cola")));
-
-//        Assert.True(result.IsSuccess);
-//        Assert.IsType<ServiceResult<Menu>>(result);
-//    }
-
-//    [Fact]
-//    public async Task UpdateMenuAsync_SoftDeletesMissingCategories()
-//    {
-//        var existingCat = new MenuCategory(10, RestaurantId, "Old Cat", true);
-//        menuCategoryDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[] { existingCat });
-
-//        // Request contains a NEW category
-//        var result = await CreateService().UpdateMenuAsync(RestaurantId, MenuWith("New Cat", Item("Pizza")));
-
-//        // Check if existingCat was deactivated
-//        await menuCategoryDao.Received(1).UpdateAsync(Arg.Is<MenuCategory>(c => c.Id == 10 && !c.IsActive), Arg.Any<CancellationToken>());
-//    }
-
-//    [Fact]
-//    public async Task UpdateMenuAsync_SoftDeletesMissingItems()
-//    {
-//        var existingCat = new MenuCategory(10, RestaurantId, "Cat", true);
-//        var existingItem = new MenuItem(1, RestaurantId, "Old Pizza", null, 10m, true, menuCategoryIds: [10]);
-        
-//        menuCategoryDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[] { existingCat });
-//        menuItemDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[] { existingItem });
-
-//        // Request contains the same category but a NEW item (different ID or 0)
-//        var updateMenu = new Menu(RestaurantId, [
-//            new MenuCategoryWithItems(10, "Cat", [Item("New Pizza")])
-//        ]);
-
-//        await CreateService().UpdateMenuAsync(RestaurantId, updateMenu);
-
-//        // Check if existingItem was deactivated
-//        await menuItemDao.Received(1).UpdateAsync(Arg.Is<MenuItem>(i => i.Id == 1 && !i.IsActive), Arg.Any<CancellationToken>());
-//    }
-
-//    [Fact]
-//    public async Task UpdateMenuAsync_UpdatesExistingItems()
-//    {
-//        var existingCat = new MenuCategory(10, RestaurantId, "Cat", true);
-//        var existingItem = new MenuItem(1, RestaurantId, "Old Name", null, 10m, true, menuCategoryIds: [10]);
-        
-//        menuCategoryDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[] { existingCat });
-//        menuItemDao.FindAllByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
-//            .Returns(new[] { existingItem });
-
-//        // Request contains item with same ID but new name
-//        var updateMenu = new Menu(RestaurantId, [
-//            new MenuCategoryWithItems(10, "Cat", [Item("New Name", id: 1)])
-//        ]);
-
-//        await CreateService().UpdateMenuAsync(RestaurantId, updateMenu);
-
-//        // Check if existingItem was updated
-//        await menuItemDao.Received(1).UpdateAsync(Arg.Is<MenuItem>(i => i.Id == 1 && i.Name == "New Name"), Arg.Any<CancellationToken>());
-//    }
-//}
 using Bite.Dal.Interface;
 using Bite.Domain;
 using Bite.Services.Common;
@@ -227,23 +70,25 @@ public class MenuServiceTests
     // =====================================================================
 
     [Fact]
-    public async Task GetMenuAsync_RestaurantNotFound_ReturnsNull()
+    public async Task GetMenuAsync_RestaurantNotFound_ReturnsNotFound()
     {
         restaurantDao.FindByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
             .Returns((Restaurant?)null);
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var result = await CreateService().GetMenuAsync(RestaurantId);
 
-        Assert.Null(menu);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceResultType.NotFound, result.ResultType);
     }
 
     [Fact]
     public async Task GetMenuAsync_RestaurantExists_ReturnsMenuForRestaurant()
     {
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var result = await CreateService().GetMenuAsync(RestaurantId);
 
-        Assert.NotNull(menu);
-        Assert.Equal(RestaurantId, menu!.RestaurantId);
+        Assert.True(result.IsSuccess);
+        var menu = result.Data!;
+        Assert.Equal(RestaurantId, menu.RestaurantId);
         Assert.Empty(menu.Categories);
     }
 
@@ -257,9 +102,9 @@ public class MenuServiceTests
                 Category(20, "Inactive Category", isActive: false),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        Assert.Single(menu!.Categories);
+        Assert.Single(menu.Categories);
         Assert.Equal("Active Category", menu.Categories.Single().Name);
     }
 
@@ -279,9 +124,9 @@ public class MenuServiceTests
                 Item("Inactive Pizza", id: 2, isActive: false, categoryIds: [10]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        var category = menu!.Categories.Single();
+        var category = menu.Categories.Single();
 
         Assert.Equal("Pizza", category.Name);
         Assert.Single(category.Items);
@@ -305,9 +150,9 @@ public class MenuServiceTests
                 Item("Cola", id: 2, categoryIds: [20]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        var pizzaCategory = menu!.Categories.Single(c => c.Id == 10);
+        var pizzaCategory = menu.Categories.Single(c => c.Id == 10);
         var drinksCategory = menu.Categories.Single(c => c.Id == 20);
 
         Assert.Single(pizzaCategory.Items);
@@ -333,9 +178,9 @@ public class MenuServiceTests
                 Item("Fries", id: 1, categoryIds: [10, 20]),
             });
 
-        var menu = await CreateService().GetMenuAsync(RestaurantId);
+        var menu = (await CreateService().GetMenuAsync(RestaurantId)).Data!;
 
-        Assert.Contains(menu!.Categories.Single(c => c.Id == 10).Items, i => i.Name == "Fries");
+        Assert.Contains(menu.Categories.Single(c => c.Id == 10).Items, i => i.Name == "Fries");
         Assert.Contains(menu.Categories.Single(c => c.Id == 20).Items, i => i.Name == "Fries");
     }
 

@@ -5,7 +5,7 @@ namespace Bite.Services.Interface;
 
 public interface IMenuService
 {
-    Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default);
+    Task<ServiceResult<Menu>> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default);
 
     Task<ServiceResult<Menu>> UpdateMenuAsync(
         int restaurantId,

@@ -14,7 +14,6 @@ public class MenuCategory(
     public int RestaurantId { get; init; } = restaurantId;
     public string Name { get; set; } = name;
     public bool IsActive { get; set; } = isActive;
-    public IEnumerable<object> Items { get; set; }
 
     public override string ToString()
     {

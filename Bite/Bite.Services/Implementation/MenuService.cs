@@ -11,12 +11,12 @@ public class MenuService(
     IMenuCategoryDao menuCategoryDao,
     IMenuItemDao menuItemDao) : IMenuService
 {
-    public async Task<Menu?> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<Menu>> GetMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         var restaurant = await restaurantDao.FindByIdAsync(restaurantId, cancellationToken);
         if (restaurant is null)
         {
-            return null;
+            return ServiceResult<Menu>.Failure("Restaurant not found.", ServiceResultType.NotFound);
         }
 
         var categories = (await menuCategoryDao.FindAllByRestaurantIdAsync(restaurantId, cancellationToken))
@@ -34,9 +34,9 @@ public class MenuService(
                     .ToList()))
             .ToList();
 
-        return new Menu(
+        return ServiceResult<Menu>.Success(new Menu(
             restaurantId: restaurantId,
-            categories: categoryWithItems);
+            categories: categoryWithItems));
     }
 
     public async Task<ServiceResult<Menu>> UpdateMenuAsync(
@@ -134,11 +134,6 @@ public class MenuService(
                 await menuCategoryDao.UpdateAsync(existing, cancellationToken);
             }
 
-            // Deactivate items not present in the request (Implicit Soft-Delete)
-            // Since this is a "replace all" update (User Story 4), any item that existed in the DB 
-            // but is missing from the incoming JSON is considered removed from the active menu.
-            // We set isActive = false to keep the menu clean for new customers while preserving 
-            // the record for historical orders.
             foreach (var existing in existingItems.Where(i => i.IsActive && !processedItemIds.Contains(i.Id)))
             {
                 existing.IsActive = false;
@@ -150,7 +145,7 @@ public class MenuService(
         }
 
         var updatedMenu = await GetMenuAsync(restaurantId, cancellationToken);
-        return ServiceResult<Menu>.Success(updatedMenu!);
+        return ServiceResult<Menu>.Success(updatedMenu.Data!);
     }
 
     private static string? ValidateMenu(Menu menu)

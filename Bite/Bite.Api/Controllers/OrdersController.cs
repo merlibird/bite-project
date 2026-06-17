@@ -10,19 +10,16 @@ namespace Bite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrdersController(IOrderService orderService) : ControllerBase
+public class OrdersController(IOrderService orderService) : ApiControllerBase
 {
     [HttpGet("{orderCode}/status")]
-    public async Task<IActionResult> GetStatus([FromRoute] string orderCode, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderStatusResponse>> GetStatus([FromRoute] string orderCode, CancellationToken cancellationToken)
     {
         var result = await orderService.GetStatusAsync(orderCode, cancellationToken);
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }), _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return Ok(new OrderStatusResponse
@@ -34,7 +31,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
 
     [ApiKeyAuth]
     [HttpPatch("{orderCode}")]
-    public async Task<IActionResult> ChangeStatus(
+    public async Task<ActionResult<OrderStatusResponse>> ChangeStatus(
         [FromRoute] string orderCode,
         [FromBody] ChangeOrderStatusRequest request,
         CancellationToken cancellationToken)
@@ -47,19 +44,14 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         }
 
         var result = await orderService.ChangeStatusAsync(
-            orderCode, 
-            restaurantId, 
-            OrderStatusExtensions.FromDbValue(request.Status), 
-            cancellationToken
-        );
+            orderCode,
+            restaurantId,
+            OrderStatusExtensions.FromDbValue(request.Status),
+            cancellationToken);
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound or ServiceResultType.Forbidden => NotFound(new { message = $"No order found with code '{orderCode}'." }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return Ok(new OrderStatusResponse
@@ -71,7 +63,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
 
     [ApiKeyAuth]
     [HttpGet("{orderCode}/status-change/{token}")]
-    public async Task<IActionResult> ApplyStatusToken(
+    public async Task<ActionResult<OrderStatusResponse>> ApplyStatusToken(
         [FromRoute] string orderCode,
         [FromRoute] string token,
         CancellationToken cancellationToken)
@@ -82,12 +74,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound or ServiceResultType.Forbidden => NotFound(new { message = "No matching order or token found." }),
-                ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return Ok(new OrderStatusResponse
@@ -98,7 +85,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     }
 
     [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
-    public async Task<IActionResult> CalculatePrice(
+    public async Task<ActionResult<Dtos.OrderPriceResponse>> CalculatePrice(
         [FromRoute] int restaurantId,
         [FromBody] OrderRequest request,
         CancellationToken cancellationToken)
@@ -111,12 +98,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return Ok(new Dtos.OrderPriceResponse
@@ -140,12 +122,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                ServiceResultType.ValidationError => UnprocessableEntity(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return CreatedAtAction(nameof(GetStatus), new { orderCode = result.Data }, new PlaceOrderResponse

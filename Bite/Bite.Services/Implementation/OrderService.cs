@@ -42,12 +42,13 @@ public class OrderService(
                 ServiceResultType.NotFound);
         }
 
-        // Check if the order belongs to the restaurant making the request
+        // Mask ownership failures as "not found" so callers cannot probe which
+        // orders exist for other restaurants.
         if (order.RestaurantId != restaurantId)
         {
             return ServiceResult<OrderStatus>.Failure(
-                "This order does not belong to your restaurant.",
-                ServiceResultType.Forbidden);
+                $"No order found with code '{orderCode}'.",
+                ServiceResultType.NotFound);
         }
 
         if (!order.Status.CanTransitionTo(newStatus))
@@ -70,26 +71,28 @@ public class OrderService(
 
     public async Task<ServiceResult<OrderStatus>> ApplyStatusTokenAsync(string orderCode, string token, int restaurantId, CancellationToken cancellationToken = default)
     {
+        // Missing order, foreign order and invalid token all collapse to one generic
+        // message so callers cannot distinguish them (no order/token existence probing).
         var order = await customerOrderDao.FindByOrderCodeAsync(orderCode, cancellationToken);
         if (order is null)
         {
             return ServiceResult<OrderStatus>.Failure(
-                $"No order found with code '{orderCode}'.",
+                "No matching order or token found.",
                 ServiceResultType.NotFound);
         }
 
         if (order.RestaurantId != restaurantId)
         {
             return ServiceResult<OrderStatus>.Failure(
-                "This order does not belong to your restaurant.",
-                ServiceResultType.Forbidden);
+                "No matching order or token found.",
+                ServiceResultType.NotFound);
         }
 
         var statusToken = await orderStatusTokenDao.FindByTokenAsync(token, cancellationToken);
         if (statusToken is null || statusToken.OrderId != order.Id)
         {
             return ServiceResult<OrderStatus>.Failure(
-                "Invalid status-change token.",
+                "No matching order or token found.",
                 ServiceResultType.NotFound);
         }
 

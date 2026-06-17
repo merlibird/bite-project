@@ -18,7 +18,5 @@ public enum ServiceResultType
     Error,
     Conflict,
     NotFound,
-    Forbidden,
-    Unauthorized,
     ValidationError
 }

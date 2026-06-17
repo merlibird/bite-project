@@ -5,6 +5,7 @@ using Bite.Domain;
 using Bite.Services.Common;
 using Bite.Services.Interface;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -12,8 +13,8 @@ namespace Bite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RestaurantsController(IRestaurantService restaurantService, 
-    IWebHostEnvironment env) : ControllerBase
+public class RestaurantsController(IRestaurantService restaurantService,
+    IWebHostEnvironment env) : ApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<RestaurantSearchResult>> SearchRestaurants(
@@ -58,11 +59,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.Conflict => Conflict(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         var (restaurantId, rawApiKey) = result.Data;
@@ -77,7 +74,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
     [ApiKeyAuth]
     [HttpPut("{id}/delivery-conditions")]
     public async Task<IActionResult> UpdateDeliveryConditions(
-        int id,
+        [FromRoute] int id,
         [FromBody] List<DeliveryZoneDto> request,
         CancellationToken cancellationToken)
     {
@@ -85,7 +82,8 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (id != authenticatedRestaurantId)
         {
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "You can only modify your own restaurant." });
         }
 
         var (deliveryZones, feeRules) = request.ToDomain(id);
@@ -98,11 +96,7 @@ public class RestaurantsController(IRestaurantService restaurantService,
 
         if (!result.IsSuccess)
         {
-            return result.ResultType switch
-            {
-                ServiceResultType.NotFound => NotFound(new { message = result.ErrorMessage }),
-                _ => BadRequest(new { message = result.ErrorMessage })
-            };
+            return HandleFailure(result);
         }
 
         return NoContent();

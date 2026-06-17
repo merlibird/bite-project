@@ -69,14 +69,14 @@ public class OrderServiceStatusTokenTests
     }
 
     [Fact]
-    public async Task ApplyStatusTokenAsync_OrderBelongsToOtherRestaurant_ReturnsForbidden()
+    public async Task ApplyStatusTokenAsync_OrderBelongsToOtherRestaurant_ReturnsNotFound()
     {
         customerOrderDao.FindByOrderCodeAsync(OrderCode, Arg.Any<CancellationToken>())
             .Returns(Order(restaurantId: 999));
 
         var result = await Apply();
 
-        Assert.Equal(ServiceResultType.Forbidden, result.ResultType);
+        Assert.Equal(ServiceResultType.NotFound, result.ResultType);
     }
 
     [Fact]
