@@ -43,4 +43,20 @@ public static class OrderStatusExtensions
         "OUT_FOR_DELIVERY" or
         "DELIVERED" or
         "CANCELLED";
+
+    public static bool CanTransitionTo(this OrderStatus current, OrderStatus next)
+    {
+        if (current == next) return true;
+        if (current == OrderStatus.Cancelled || current == OrderStatus.Delivered) return false;
+
+        return next switch
+        {
+            OrderStatus.SentToRestaurant => current == OrderStatus.Received,
+            OrderStatus.InPreparation => current == OrderStatus.SentToRestaurant,
+            OrderStatus.OutForDelivery => current == OrderStatus.InPreparation,
+            OrderStatus.Delivered => current == OrderStatus.OutForDelivery,
+            OrderStatus.Cancelled => current != OrderStatus.Delivered && current != OrderStatus.Cancelled,
+            _ => false
+        };
+    }
 }

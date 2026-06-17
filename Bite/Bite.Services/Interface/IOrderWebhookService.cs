@@ -7,7 +7,8 @@ public sealed record OrderWebhookPayload(
     IReadOnlyList<OrderWebhookItem> Items,
     OrderWebhookAddress DeliveryAddress,
     decimal DeliveryFee,
-    decimal Total);
+    decimal Total,
+    IReadOnlyDictionary<string, string> StatusLinks);
 
 public sealed record OrderWebhookItem(
     int MenuItemId,
@@ -29,5 +30,6 @@ public interface IOrderWebhookService
         CustomerOrder order,
         Address deliveryAddress,
         IReadOnlyList<(MenuItem MenuItem, int Quantity)> items,
+        IReadOnlyDictionary<OrderStatus, string> statusTokens,
         CancellationToken cancellationToken = default);
 }

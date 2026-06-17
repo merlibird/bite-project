@@ -16,7 +16,8 @@ public class OrderService(
     IDeliveryFeeRuleDao deliveryFeeRuleDao,
     IOrderCodeService orderCodeService,
     IOrderItemDao orderItemDao,
-    IOrderWebhookService orderWebhookService) : IOrderService
+    IOrderWebhookService orderWebhookService,
+    IOrderStatusTokenService orderStatusTokenService) : IOrderService
 {
     public async Task<ServiceResult<OrderStatus>> GetStatusAsync(string orderCode, CancellationToken cancellationToken = default)
     {
@@ -48,6 +49,13 @@ public class OrderService(
             return ServiceResult<OrderStatus>.Failure(
                 $"No order found with code '{orderCode}'.",
                 ServiceResultType.NotFound);
+        }
+
+        if (!order.Status.CanTransitionTo(newStatus))
+        {
+            return ServiceResult<OrderStatus>.Failure(
+                $"Cannot transition from {order.Status} to {newStatus}.",
+                ServiceResultType.ValidationError);
         }
 
         var updated = await customerOrderDao.UpdateStatusAsync(order.Id, newStatus, cancellationToken);
@@ -102,9 +110,15 @@ public class OrderService(
                 ServiceResultType.Conflict);
         }
 
+        if (!order.Status.CanTransitionTo(statusToken.TargetStatus))
+        {
+            return ServiceResult<OrderStatus>.Failure(
+                $"This status-change link is no longer valid for the current order status ({order.Status}).",
+                ServiceResultType.Conflict);
+        }
+
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-        // Atomically claim the token; if another request consumed it first, this returns false.
         var claimed = await orderStatusTokenDao.MarkUsedAsync(statusToken.Id, cancellationToken);
         if (!claimed)
         {
@@ -176,7 +190,10 @@ public class OrderService(
 
         int orderId = await customerOrderDao.InsertAsync(order, cancellationToken);
 
-        // 4. Insert Order Items
+        // 4. Generate Status Tokens for all relevant transitions
+        var statusTokens = await orderStatusTokenService.CreateTokensForOrderAsync(orderId, cancellationToken);
+
+        // 5. Insert Order Items
         foreach (var item in validatedItems)
         {
             var orderItem = new OrderItem(
@@ -189,7 +206,7 @@ public class OrderService(
             await orderItemDao.InsertAsync(orderItem, cancellationToken);
         }
 
-        // 5. Notify via Webhook (add to outbox for async processing)
+        // 6. Notify via Webhook (add to outbox for async processing)
         var createdOrder = new CustomerOrder(
             id: orderId,
             restaurantId: restaurantId,
@@ -199,7 +216,7 @@ public class OrderService(
             deliveryFee: deliveryFee,
             total: subtotal + deliveryFee);
 
-        await orderWebhookService.NotifyOrderCreatedAsync(createdOrder, deliveryAddress, validatedItems, cancellationToken);
+        await orderWebhookService.NotifyOrderCreatedAsync(createdOrder, deliveryAddress, validatedItems, statusTokens, cancellationToken);
 
         scope.Complete();
 
@@ -285,8 +302,7 @@ public class OrderService(
         }
         else if (rules.Count > 0)
         {
-            // Fallback: If subtotal > all MaxOrderValues, default to 0.
-            // TODO: Discuss fallback logic further.
+            // Fallback: If subtotal > all MaxOrderValues, default to 0 as in requirements defined.
             deliveryFee = 0;
         }
 

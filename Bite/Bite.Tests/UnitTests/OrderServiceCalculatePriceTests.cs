@@ -33,6 +33,7 @@ public class OrderServiceCalculatePriceTests
     private readonly IOrderCodeService orderCodeService = Substitute.For<IOrderCodeService>();
     private readonly IOrderItemDao orderItemDao = Substitute.For<IOrderItemDao>();
     private readonly IOrderWebhookService orderWebhookService = Substitute.For<IOrderWebhookService>();
+    private readonly IOrderStatusTokenService orderStatusTokenService = Substitute.For<IOrderStatusTokenService>();
 
     private OrderService CreateService() => new(
         customerOrderDao,
@@ -44,7 +45,8 @@ public class OrderServiceCalculatePriceTests
         deliveryFeeRuleDao,
         orderCodeService,
         orderItemDao,
-        orderWebhookService);
+        orderWebhookService,
+        orderStatusTokenService);
 
     public OrderServiceCalculatePriceTests()
     {

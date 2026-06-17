@@ -165,7 +165,7 @@ Content-Type: application/json
 {
   "items": [
     {
-      "menuItemId": 12,
+      "menuItemId": 1,
       "quantity": 3
     }
   ],
@@ -200,7 +200,7 @@ Content-Type: application/json
 ###
 
 ### Apply Status Token via Link (US 11)
-# funktioniert noch nicht zu 100 % (muss noch mit swagger testen)
-GET {{Bite.Api_HostAddress}}/api/orders/MC9QEPB6/status-change/IN_PREPARATION
+# Die URL muss das Format /api/orders/{orderCode}/status-change/{token} haben.
+GET {{Bite.Api_HostAddress}}/api/orders/MC9QEPB6/status-change/SGVsbG8tV29ybGQtaW4tQmFzZTY0VXJsLWZvcm1hdC0xMjM
 X-Api-Key: {{ApiKeyNim}}
 Accept: application/json
