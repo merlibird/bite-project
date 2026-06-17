@@ -33,7 +33,7 @@ public sealed class OrderWebhookService(
 
         var statusLinks = statusTokens.ToDictionary(
             kvp => kvp.Key.ToDbValue(),
-            kvp => $"{baseUrl}/api/orders/{order.OrderCode}/status-change/{kvp.Value}"
+            kvp => $"{baseUrl}/api/Orders/{order.OrderCode}/status-change/{kvp.Value}"
         );
 
         var payload = new OrderWebhookPayload(

@@ -9,7 +9,7 @@ namespace Bite.Services.Implementation;
 public class OrderStatusTokenService(IOrderStatusTokenDao orderStatusTokenDao) : IOrderStatusTokenService
 {
     private const int TokenByteLength = 32;
-    private const int ValidforNDays = 7;
+    private const int ValidForNDays = 7;
 
     public async Task<IReadOnlyDictionary<OrderStatus, string>> CreateTokensForOrderAsync(int orderId, CancellationToken cancellationToken = default)
     {
@@ -33,7 +33,7 @@ public class OrderStatusTokenService(IOrderStatusTokenDao orderStatusTokenDao) :
                 token: tokenValue,
                 targetStatus: status,
                 used: false,
-                expiresAt: DateTime.UtcNow.AddDays(ValidforNDays) // Tokens valid for 7 days
+                expiresAt: DateTime.UtcNow.AddDays(ValidForNDays) // Tokens valid for 7 days
             );
 
             await orderStatusTokenDao.InsertAsync(statusToken, cancellationToken);
