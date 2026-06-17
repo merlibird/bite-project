@@ -63,10 +63,10 @@ Content-Type: application/json
   { "DayOfWeek": 1, "OpenTime": "11:00:00", "CloseTime": "22:00:00" }
 ]
 --WebAppBoundary
-Content-Disposition: form-data; name="CoverImage"; filename="restaurant.png"
-Content-Type: image/png
+Content-Disposition: form-data; name="CoverImage"; filename="upload_test_photo.jpg"
+Content-Type: image/jpeg
 
-< ./beispiel.png
+< ../../docs/images/upload_test_photo.jpg
 --WebAppBoundary--
 
 ###
