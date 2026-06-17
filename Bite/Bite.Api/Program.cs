@@ -45,6 +45,7 @@ builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IRestaurantService, RestaurantService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderCodeService, OrderCodeService>();
+builder.Services.AddScoped<IOrderStatusTokenService, OrderStatusTokenService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Webhook services

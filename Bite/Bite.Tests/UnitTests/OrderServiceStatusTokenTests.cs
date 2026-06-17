@@ -26,6 +26,7 @@ public class OrderServiceStatusTokenTests
     private readonly IOrderCodeService orderCodeService = Substitute.For<IOrderCodeService>();
     private readonly IOrderItemDao orderItemDao = Substitute.For<IOrderItemDao>();
     private readonly IOrderWebhookService orderWebhookService = Substitute.For<IOrderWebhookService>();
+    private readonly IOrderStatusTokenService orderStatusTokenService = Substitute.For<IOrderStatusTokenService>();
 
     private OrderService CreateService() => new(
         customerOrderDao,
@@ -37,7 +38,8 @@ public class OrderServiceStatusTokenTests
         deliveryFeeRuleDao,
         orderCodeService,
         orderItemDao,
-        orderWebhookService);
+        orderWebhookService,
+        orderStatusTokenService);
 
     public OrderServiceStatusTokenTests()
     {
@@ -46,11 +48,11 @@ public class OrderServiceStatusTokenTests
         orderStatusTokenDao.MarkUsedAsync(TokenId, Arg.Any<CancellationToken>()).Returns(true);
     }
 
-    private static CustomerOrder Order(int restaurantId = RestaurantId)
-        => new(OrderId, restaurantId, addressId: 1, OrderCode, OrderStatus.Received, deliveryFee: 0, total: 0);
+    private static CustomerOrder Order(int restaurantId = RestaurantId, OrderStatus status = OrderStatus.Received)
+        => new(OrderId, restaurantId, addressId: 1, OrderCode, status, deliveryFee: 0, total: 0);
 
-    private static OrderStatusToken StatusToken(bool used = false, int orderId = OrderId, DateTime? expiresAt = null)
-        => new(TokenId, orderId, Token, TargetStatus, used, expiresAt ?? DateTime.UtcNow.AddMinutes(10));
+    private static OrderStatusToken StatusToken(bool used = false, int orderId = OrderId, DateTime? expiresAt = null, OrderStatus targetStatus = TargetStatus)
+        => new(TokenId, orderId, Token, targetStatus, used, expiresAt ?? DateTime.UtcNow.AddMinutes(10));
 
     private Task<ServiceResult<OrderStatus>> Apply()
         => CreateService().ApplyStatusTokenAsync(OrderCode, Token, RestaurantId);
@@ -122,20 +124,32 @@ public class OrderServiceStatusTokenTests
     }
 
     [Fact]
-    public async Task ApplyStatusTokenAsync_ValidToken_ReturnsSuccessWithTargetStatus()
+    public async Task ApplyStatusTokenAsync_InvalidTransition_ReturnsConflict()
     {
+        // Try to go from Delivered to InPreparation
+        customerOrderDao.FindByOrderCodeAsync(OrderCode, Arg.Any<CancellationToken>())
+            .Returns(Order(status: OrderStatus.Delivered));
+        
+        orderStatusTokenDao.FindByTokenAsync(Token, Arg.Any<CancellationToken>())
+            .Returns(StatusToken(targetStatus: OrderStatus.InPreparation));
+
         var result = await Apply();
 
-        Assert.Equal(ServiceResultType.Success, result.ResultType);
-        Assert.Equal(TargetStatus, result.Data);
+        Assert.Equal(ServiceResultType.Conflict, result.ResultType);
     }
 
     [Fact]
     public async Task ApplyStatusTokenAsync_ValidToken_UpdatesOrderToTargetStatus()
     {
+        customerOrderDao.FindByOrderCodeAsync(OrderCode, Arg.Any<CancellationToken>())
+            .Returns(Order(status: OrderStatus.SentToRestaurant));
+
+        orderStatusTokenDao.FindByTokenAsync(Token, Arg.Any<CancellationToken>())
+            .Returns(StatusToken(targetStatus: OrderStatus.InPreparation));
+
         await Apply();
 
         await customerOrderDao.Received(1)
-            .UpdateStatusAsync(OrderId, TargetStatus, Arg.Any<CancellationToken>());
+            .UpdateStatusAsync(OrderId, OrderStatus.InPreparation, Arg.Any<CancellationToken>());
     }
 }

@@ -1,6 +1,8 @@
+using Bite.Domain;
+
 namespace Bite.Services.Interface;
 
 public interface IOrderStatusTokenService
 {
-    string GenerateToken();
+    Task<IReadOnlyDictionary<OrderStatus, string>> CreateTokensForOrderAsync(int orderId, CancellationToken cancellationToken = default);
 }

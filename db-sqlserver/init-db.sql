@@ -180,6 +180,8 @@ CREATE TABLE OrderStatusToken (
     )),
     CONSTRAINT FK_OrderStatusToken_CustomerOrder FOREIGN KEY (order_id) REFERENCES CustomerOrder(id) ON DELETE CASCADE
 );
+CREATE INDEX IX_OrderStatusToken_OrderId ON OrderStatusToken(order_id);
+CREATE INDEX IX_OrderStatusToken_ExpiresAt ON OrderStatusToken(expires_at);
 PRINT 'Table "OrderStatusToken" created.';
 
 CREATE TABLE WebhookOutbox (
