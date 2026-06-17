@@ -50,6 +50,27 @@ Analog zu Übung mit dem Befehl "docker compose up" im Order /db-sqlserver/
 
 ### 2. Dokumentieren Sie auf Request-Ebene den gesamten Workflow anhand eines durchgehenden Beispiels (von der Registrierung eines Restaurants bis zur Abfrage des Bestellstatus). Sie können ein Tool Ihrer Wahl einsetzen, z. B. Postman Workflows, VS Code, etc. HTTP-Requests inkl. HTTP-Verb, URL, Parametern, Body und Headern.
 
+Der vollständige, ausführbare Workflow – mit allen URLs, Parametern, Bodies und Headern – ist als lesbare HTTP-Datei im Repo hinterlegt: [`Bite/Bite.Api/Bite.Api.http`](Bite/Bite.Api/Bite.Api.http) (ausführbar in Visual Studio bzw. VS Code mit der „REST Client"-Extension). Basis-URL: `http://localhost:5126`; geschützte Requests benötigen den Header `X-Api-Key`.
+
+Kurzerläuterung des durchgängigen Beispiels (Registrierung → Bestellstatus):
+
+1. **POST `/api/Restaurants`** (US 1, multipart/form-data) – Restaurant registrieren. → liefert `restaurantId` + `apiKey` (Key für alle folgenden geschützten Requests).
+2. **PUT `/api/Restaurants/{restaurantId}/delivery-conditions`** (US 3, `X-Api-Key`) – Lieferzonen & -kosten festlegen.
+3. **PUT `/api/restaurants/{restaurantId}/menu`** (US 4, `X-Api-Key`) – Speisekarte anlegen/ersetzen.
+4. **GET `/api/Restaurants?latitude=…&longitude=…&openNow=…&count=…`** (US 5) – Restaurants in der Nähe suchen (Kundensicht).
+5. **GET `/api/restaurants/{restaurantId}/menu`** (US 6) – Speisekarte abrufen.
+6. **POST `/api/restaurants/{restaurantId}/orders/price`** (US 7) – Preisvorschau inkl. Lieferkosten.
+7. **POST `/api/restaurants/{restaurantId}/orders`** (US 8) – Bestellung verbindlich aufgeben. → liefert `orderCode`; zusätzlich geht ein Webhook (US 9) an das Restaurant, der die **Status-Änderungs-Links** enthält (je ein einmalig gültiges Token pro Folgestatus).
+8. **GET `/api/Orders/{orderCode}/status`** (US 12) – Bestellstatus abfragen.
+9. **Status ändern** – zwei Wege, beide mit `X-Api-Key`:
+   - **PATCH `/api/Orders/{orderCode}`** (US 10) mit Body `{ "status": "SENT_TO_RESTAURANT" }`, oder
+   - **GET `/api/Orders/{orderCode}/status-change/{token}`** (US 11) – Link aus dem Webhook (Token aus Schritt 7).
+
+   Erlaubte Reihenfolge: `RECEIVED → SENT_TO_RESTAURANT → IN_PREPARATION → OUT_FOR_DELIVERY → DELIVERED` (oder `CANCELLED`); ungültige Sprünge werden mit `422` abgelehnt.
+10. **GET `/api/Orders/{orderCode}/status`** – erneute Abfrage zeigt den geänderten Status.
+
+Datenfluss zwischen den Schritten: `apiKey` ← Schritt 1, `orderCode` ← Schritt 7, `token` ← Webhook (Schritt 7). In der `.http`-Datei laufen die Requests gegen das vorbefüllte Restaurant `id = 1` (Key `nimmersatt-api-key-2026`) und sind damit ohne vorherige Registrierung direkt ausführbar.
+
 ### 3. Wie stellen Sie sicher, dass manche Requests nur mit einem gültigen API-Key aufgerufen werden können?
 
 ### 4. Bei welchen Teilen Ihres Systems ist eine korrekte Funktionsweise aus Sicht von BITE am wichtigsten? Welche Maßnahmen haben Sie getroffen, um sie zu gewährleisten?

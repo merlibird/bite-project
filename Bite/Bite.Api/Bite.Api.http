@@ -1,22 +1,30 @@
-@Bite.Api_HostAddress = http://localhost:5126
+@HostAddress = http://localhost:5126
 
 # API Keys (Hashed in DB, use raw values in header)
 @ApiKeyNim = nimmersatt-api-key-2026
 @ApiKeyBur = burger-bude-api-key-2026
 @ApiKeySak = sakura-sushi-api-key-2026
 
+# Suchparameter (US 5) – zum Testen hier anpassen
+@searchLatitude = 48.3692
+@searchLongitude = 14.5125
+@searchOpenNow = false
+@searchCount = 10
+
 # ============================================================
 # 1. RESTAURANTS CONTROLLER
 # ============================================================
 
 ### Search Restaurants (US 5)
-GET {{Bite.Api_HostAddress}}/api/Restaurants?latitude=48.3692&longitude=14.5125&openNow=false&count=10
+GET {{HostAddress}}/api/Restaurants?latitude={{searchLatitude}}&longitude={{searchLongitude}}&openNow={{searchOpenNow}}&count={{searchCount}}
 Accept: application/json
 
 ###
 
 ### Register a new Restaurant (US 1)
-POST {{Bite.Api_HostAddress}}/api/Restaurants
+# Image upload only possible via Swagger UI (http://localhost:5126/swagger)
+# VS .http-Runner does not support file upload.
+POST {{HostAddress}}/api/Restaurants
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
@@ -72,7 +80,7 @@ Content-Type: image/jpeg
 ###
 
 ### Update Delivery Conditions (US 3)
-PUT {{Bite.Api_HostAddress}}/api/Restaurants/1/delivery-conditions
+PUT {{HostAddress}}/api/Restaurants/1/delivery-conditions
 X-Api-Key: {{ApiKeyNim}}
 Content-Type: application/json
 
@@ -96,13 +104,13 @@ Content-Type: application/json
 # ============================================================
 
 ### Get Menu of a Restaurant (US 6)
-GET {{Bite.Api_HostAddress}}/api/restaurants/1/menu
+GET {{HostAddress}}/api/restaurants/1/menu
 Accept: application/json
 
 ###
 
 ### Update/Replace Restaurant Menu (US 4)
-PUT {{Bite.Api_HostAddress}}/api/restaurants/1/menu
+PUT {{HostAddress}}/api/restaurants/1/menu
 X-Api-Key: {{ApiKeyNim}}
 Content-Type: application/json
 
@@ -135,7 +143,7 @@ Content-Type: application/json
 # ============================================================
 
 ### Calculate Order Price Preview (US 7)
-POST {{Bite.Api_HostAddress}}/api/restaurants/1/orders/price
+POST {{HostAddress}}/api/restaurants/1/orders/price
 Content-Type: application/json
 
 {
@@ -159,7 +167,7 @@ Content-Type: application/json
 ###
 
 ### Place a Binding Order (US 8)
-POST {{Bite.Api_HostAddress}}/api/restaurants/1/orders
+POST {{HostAddress}}/api/restaurants/1/orders
 Content-Type: application/json
 
 {
@@ -183,13 +191,13 @@ Content-Type: application/json
 ###
 
 ### Get Order Status (US 12)
-GET {{Bite.Api_HostAddress}}/api/Orders/7BP83YZR/status
+GET {{HostAddress}}/api/Orders/7BP83YZR/status
 Accept: application/json
 
 ###
 
 ### Change Order Status (US 10)
-PATCH {{Bite.Api_HostAddress}}/api/Orders/7BP83YZR
+PATCH {{HostAddress}}/api/Orders/7BP83YZR
 X-Api-Key: {{ApiKeyNim}}
 Content-Type: application/json
 
@@ -201,6 +209,6 @@ Content-Type: application/json
 
 ### Apply Status Token via Link (US 11)
 # Die URL muss das Format /api/orders/{orderCode}/status-change/{token} haben.
-GET {{Bite.Api_HostAddress}}/api/orders/MC9QEPB6/status-change/SGVsbG8tV29ybGQtaW4tQmFzZTY0VXJsLWZvcm1hdC0xMjM
+GET {{HostAddress}}/api/orders/MC9QEPB6/status-change/SGVsbG8tV29ybGQtaW4tQmFzZTY0VXJsLWZvcm1hdC0xMjM
 X-Api-Key: {{ApiKeyNim}}
 Accept: application/json
