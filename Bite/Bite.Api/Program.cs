@@ -5,6 +5,8 @@ using Bite.Dal.Common;
 using Bite.Dal.Interface;
 using Bite.Services.Implementation;
 using Bite.Services.Interface;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,8 +70,18 @@ builder.Services.AddScoped<IWebhookOutboxDao, WebhookOutboxDao>();
 
 var app = builder.Build();
 
-// First in the pipeline so it wraps everything (controllers, filters, model binding).
+// Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+// Parse request data (incl. multipart form values like Latitude/Longitude) with
+// InvariantCulture, so e.g. "14.2860" is not misread on non-en server locales.
+var invariantCultures = new[] { CultureInfo.InvariantCulture };
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(CultureInfo.InvariantCulture),
+    SupportedCultures = invariantCultures,
+    SupportedUICultures = invariantCultures
+});
 
 if (app.Environment.IsDevelopment())
 {
