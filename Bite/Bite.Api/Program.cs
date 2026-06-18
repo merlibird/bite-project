@@ -1,3 +1,4 @@
+using Bite.Api.Json;
 using Bite.Api.Middleware;
 using Bite.Api.Webhooks;
 using Bite.Dal.Ado;
@@ -19,6 +20,8 @@ builder.Services.AddControllers(options =>
 {
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+
+    options.JsonSerializerOptions.Converters.Add(new OrderStatusJsonConverter());
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 })
 .AddXmlDataContractSerializerFormatters();

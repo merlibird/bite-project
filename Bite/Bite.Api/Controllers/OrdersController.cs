@@ -25,7 +25,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
         return Ok(new OrderStatusResponse
         {
             OrderCode = orderCode,
-            Status = result.Data.ToDbValue()
+            Status = result.Data
         });
     }
 
@@ -38,15 +38,10 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
     {
         int restaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
 
-        if (!OrderStatusExtensions.IsValidOrderStatus(request.Status))
-        {
-            return BadRequest(new { message = $"Invalid status '{request.Status}'." });
-        }
-
         var result = await orderService.ChangeStatusAsync(
             orderCode,
             restaurantId,
-            OrderStatusExtensions.FromDbValue(request.Status),
+            request.Status,
             cancellationToken);
 
         if (!result.IsSuccess)
@@ -57,7 +52,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
         return Ok(new OrderStatusResponse
         {
             OrderCode = orderCode,
-            Status = result.Data.ToDbValue()
+            Status = result.Data
         });
     }
 
@@ -80,7 +75,7 @@ public class OrdersController(IOrderService orderService) : ApiControllerBase
         return Ok(new OrderStatusResponse
         {
             OrderCode = orderCode,
-            Status = result.Data.ToDbValue()
+            Status = result.Data
         });
     }
 
