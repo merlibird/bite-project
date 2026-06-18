@@ -4,7 +4,6 @@ GO
 
 IF EXISTS (SELECT 1 FROM Restaurant)
 BEGIN
-    -- PRINT 'Database already contains data. Skipping fill-data.sql.';
     GOTO EndOfScript;
 END
 
@@ -48,7 +47,7 @@ VALUES
 -- Wien cluster (multiple districts for realistic geo testing)
 ('Burger Bude Wien',          'Hauptstrasse',        '42', '1010', 'Wien',      16.3738, 48.2082, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',      'img/burgerbude.png',     'burger-bude-api-key-2026',    'Burger',        20.00, 10.0, '11:00', '23:00'),
 ('Sakura Sushi',              'Mariahilfer Strasse', '88', '1060', 'Wien',      16.3540, 48.1970, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544','img/sakura.png',        'sakura-sushi-api-key-2026',   'Sushi',         25.00, 12.0, '12:00', '22:00'),
-('Pizzeria Napoli Wien',      'Praterstrasse',       '15', '1020', 'Wien',      16.3920, 48.2180, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',          'img/napoli.png',         'napoli-api-key-2026',         'Pizza',         15.00, 8.0,  '11:00', '23:3₀'),
+('Pizzeria Napoli Wien',      'Praterstrasse',       '15', '1020', 'Wien',      16.3920, 48.2180, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',          'img/napoli.png',         'napoli-api-key-2026',         'Pizza',         15.00, 8.0,  '11:00', '23:30');
 
 -- ============================================================
 -- 2. INSERT RESTAURANTS, ADDRESSES, CATEGORIES, MENU ITEMS,
@@ -57,7 +56,6 @@ VALUES
 DECLARE @rIdx INT = 1;
 DECLARE @rCount INT = (SELECT COUNT(*) FROM @Restaurants);
 
--- Keep a map of restaurant_id -> name so later sections can look items up by name.
 DECLARE @RestaurantMap TABLE (RestaurantId INT, Name NVARCHAR(100), CategoryId INT);
 
 WHILE @rIdx <= @rCount
@@ -125,7 +123,6 @@ BEGIN
     SET @rIdx = @rIdx + 1;
 END
 
--- PRINT 'Restaurants, addresses, categories, opening hours and delivery zones inserted.';
 
 -- ============================================================
 -- 3. MENU ITEMS PER RESTAURANT (kept explicit per restaurant
@@ -135,11 +132,9 @@ DECLARE @rId INT, @cId INT;
 
 -- Helper macro pattern: look up restaurant + its single category, insert items, link them.
 -- Restaurant Nimmersatt
--- "Liebevoll gepflegt": mehrere Kategorien (Pizza/Pasta/Getraenke/Dessert) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Restaurant Nimmersatt';
 
 DECLARE @catNimPasta INT, @catNimGetraenke INT, @catNimDessert INT;
--- @cId (aus @RestaurantMap) ist bereits die zuvor angelegte "Pizza & Pasta"-Kategorie.
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catNimGetraenke = SCOPE_IDENTITY();
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Dessert');   SET @catNimDessert = SCOPE_IDENTITY();
 SET @catNimPasta = @cId;
@@ -224,11 +219,9 @@ INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
 SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
 
 -- Burger Bude Wien
--- "Liebevoll gepflegt": mehrere Kategorien (Burger/Salat/Getraenke) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Burger Bude Wien';
 
 DECLARE @catBurSalat INT, @catBurGetraenke INT;
--- @cId ist bereits die zuvor angelegte "Burger"-Kategorie.
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Salat');     SET @catBurSalat = SCOPE_IDENTITY();
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catBurGetraenke = SCOPE_IDENTITY();
 
@@ -257,11 +250,9 @@ JOIN MenuItem mi ON mi.restaurant_id = @rId AND mi.name = i.Name;
 DELETE FROM @itemsBurger;
 
 -- Sakura Sushi
--- "Liebevoll gepflegt": mehrere Kategorien (Sushi/Salat/Getraenke/Dessert) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Sakura Sushi';
 
 DECLARE @catSakSalat INT, @catSakGetraenke INT, @catSakDessert INT;
--- @cId ist bereits die zuvor angelegte "Sushi"-Kategorie.
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Salat');     SET @catSakSalat = SCOPE_IDENTITY();
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catSakGetraenke = SCOPE_IDENTITY();
 INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Dessert');   SET @catSakDessert = SCOPE_IDENTITY();
@@ -303,34 +294,6 @@ INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
 SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
 
--- Falafel King Ottakring
-SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Falafel King Ottakring';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Falafel Teller', 'Mit Hummus & Salat', 9.90),
-    (@rId, 'Falafel Wrap', 'Mit Tahini-Sauce', 7.50),
-    (@rId, 'Halloumi Spieße', 'Gegrillt, mit Gemüse', 8.90);
-INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
-
--- Steakhouse Favoriten
-SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Steakhouse Favoriten';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Ribeye Steak 300g', 'Mit Kräuterbutter', 28.90),
-    (@rId, 'Sirloin Steak 250g', 'Mit Pfeffersauce', 24.50),
-    (@rId, 'Gegrillter Mais', 'Beilage', 4.50);
-INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
-
--- Ramen Bar Donaustadt
-SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Ramen Bar Donaustadt';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Shoyu Ramen', 'Mit Schweinebauch & Ei', 12.90),
-    (@rId, 'Miso Ramen', 'Mit Mais & Frühlingszwiebel', 12.50),
-    (@rId, 'Gyoza (6 Stk.)', 'Gebraten', 6.50);
-INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
-
--- PRINT 'Menu items inserted for all restaurants.';
 
 -- ============================================================
 -- 4. Create 25 Unique Student Locations spread across the same
@@ -374,7 +337,6 @@ BEGIN
     SET @i = @i + 1;
 END
 
--- PRINT (SELECT CAST(COUNT(*) AS VARCHAR) FROM @Locs) + ' unique student addresses inserted.';
 
 -- ============================================================
 -- 5. Create 50 Geographically Plausible Orders, each restaurant
@@ -427,7 +389,7 @@ BEGIN
     DECLARE @subtotal DECIMAL(10,2) = 0;
 
     -- Add between 1 and 4 distinct order items from this restaurant's menu.
-    DECLARE @itemCount INT = 1 + CAST(RAND() * 4 AS INT); -- 1..4
+    DECLARE @itemCount INT = 1 + CAST(RAND() * 4 AS INT);
     IF @itemCount > 4 SET @itemCount = 4;
 
     DECLARE @ItemsToAdd TABLE (MenuItemId INT, Price DECIMAL(10,2));
@@ -478,10 +440,6 @@ BEGIN
     SET @orderIter = @orderIter + 1;
 END
 
--- PRINT CAST(@totalOrders AS VARCHAR) + ' geographically realistic orders inserted with computed delivery fees.';
-
--- PRINT 'Test data filled successfully.';
 
 EndOfScript:
--- PRINT 'Script completed.';
 GO
