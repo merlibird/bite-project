@@ -139,14 +139,39 @@ DECLARE @rId INT, @cId INT;
 
 -- Helper macro pattern: look up restaurant + its single category, insert items, link them.
 -- Restaurant Nimmersatt
+-- "Liebevoll gepflegt": mehrere Kategorien (Pizza/Pasta/Getraenke/Dessert) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Restaurant Nimmersatt';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Margherita', 'Classic Tomato & Cheese', 9.50),
-    (@rId, 'Spinaci', 'Spinat & Feta', 10.50),
-    (@rId, 'Lasagne al Forno', 'Hausgemacht mit Rind', 12.00),
-    (@rId, 'Tiramisu', 'Hausgemacht', 5.50);
+
+DECLARE @catNimPasta INT, @catNimGetraenke INT, @catNimDessert INT;
+-- @cId (aus @RestaurantMap) ist bereits die zuvor angelegte "Pizza & Pasta"-Kategorie.
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catNimGetraenke = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Dessert');   SET @catNimDessert = SCOPE_IDENTITY();
+SET @catNimPasta = @cId;
+
+DECLARE @itemsNimmersatt TABLE (Name NVARCHAR(100), Description NVARCHAR(255), Price DECIMAL(10,2), CategoryId INT);
+INSERT INTO @itemsNimmersatt (Name, Description, Price, CategoryId) VALUES
+    ('Margherita',               'Tomaten, Kaese',                              9.50, @cId),
+    ('Al Tonno',                 'Tomaten, Kaese, Thunfisch, Zwiebel, Oliven', 11.00, @cId),
+    ('Spinaci',                  'Tomaten, Kaese, Spinat, Feta',               10.00, @cId),
+    ('Diavola',                  'Tomaten, Kaese, Salami, Chili',              10.50, @cId),
+    ('Lasagne al Forno',         'Hausgemacht mit Rind',                       12.00, @catNimPasta),
+    ('Spaghetti Frutti di Mare', 'Meeresfruechte, Weissweinsauce',             14.00, @catNimPasta),
+    ('Penne Arrabbiata',         'Tomatensauce, Chili, Knoblauch',              9.00, @catNimPasta),
+    ('Cola',                     '0,5l',                                        2.50, @catNimGetraenke),
+    ('Wasser',                   '0,5l still',                                  1.80, @catNimGetraenke),
+    ('Bier',                     '0,5l Ottakringer',                            3.50, @catNimGetraenke),
+    ('Tiramisu',                 'Hausgemacht',                                 5.50, @catNimDessert),
+    ('Panna Cotta',              'Mit Beerensauce',                             4.90, @catNimDessert);
+
+INSERT INTO MenuItem (restaurant_id, name, description, price)
+SELECT @rId, Name, Description, Price FROM @itemsNimmersatt;
+
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
+SELECT mi.id, i.CategoryId, @rId
+FROM @itemsNimmersatt i
+JOIN MenuItem mi ON mi.restaurant_id = @rId AND mi.name = i.Name;
+
+DELETE FROM @itemsNimmersatt;
 
 -- Pizzeria Da Mario
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Pizzeria Da Mario';
@@ -203,24 +228,75 @@ INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
 SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
 
 -- Burger Bude Wien
+-- "Liebevoll gepflegt": mehrere Kategorien (Burger/Salat/Getraenke) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Burger Bude Wien';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Classic Burger', 'Beef, Salad, Tomato', 8.90),
-    (@rId, 'Cheese Burger', 'Beef & extra Cheddar', 9.50),
-    (@rId, 'Bacon BBQ Burger', 'Mit Bacon & BBQ-Sauce', 10.90),
-    (@rId, 'Pommes Frites', 'Mit Mayo', 3.50);
+
+DECLARE @catBurSalat INT, @catBurGetraenke INT;
+-- @cId ist bereits die zuvor angelegte "Burger"-Kategorie.
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Salat');     SET @catBurSalat = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catBurGetraenke = SCOPE_IDENTITY();
+
+DECLARE @itemsBurger TABLE (Name NVARCHAR(100), Description NVARCHAR(255), Price DECIMAL(10,2), CategoryId INT);
+INSERT INTO @itemsBurger (Name, Description, Price, CategoryId) VALUES
+    ('Classic Burger', 'Rindfleisch, Salat, Tomate, Gurke',       8.90, @cId),
+    ('Cheese Burger',  'Rindfleisch, Cheddar, Zwiebeln',          9.50, @cId),
+    ('BBQ Burger',     'Rindfleisch, BBQ-Sauce, Bacon, Cheddar', 11.90, @cId),
+    ('Veggie Burger',  'Gemuesepatty, Avocado, Tomate',           9.90, @cId),
+    ('Chicken Burger', 'Knuspriges Huehnchen, Coleslaw',         10.50, @cId),
+    ('Pommes Frites',  'Mit Mayo',                                3.50, @cId),
+    ('Caesar Salad',   'Roemerherz, Parmesan, Croutons',          7.90, @catBurSalat),
+    ('Greek Salad',    'Tomate, Gurke, Feta, Oliven',             7.50, @catBurSalat),
+    ('Cola',           '0,4l',                                    2.80, @catBurGetraenke),
+    ('Limo',           '0,4l, div. Sorten',                       2.80, @catBurGetraenke),
+    ('Milchshake',     'Schoko, Vanille oder Erdbeere',           4.50, @catBurGetraenke);
+
+INSERT INTO MenuItem (restaurant_id, name, description, price)
+SELECT @rId, Name, Description, Price FROM @itemsBurger;
+
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
+SELECT mi.id, i.CategoryId, @rId
+FROM @itemsBurger i
+JOIN MenuItem mi ON mi.restaurant_id = @rId AND mi.name = i.Name;
+
+DELETE FROM @itemsBurger;
 
 -- Sakura Sushi
+-- "Liebevoll gepflegt": mehrere Kategorien (Sushi/Salat/Getraenke/Dessert) statt nur einer.
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Sakura Sushi';
-INSERT INTO MenuItem (restaurant_id, name, description, price) VALUES
-    (@rId, 'Sake Nigiri', 'Lachs (2 Stk.)', 4.80),
-    (@rId, 'California Roll', 'Avocado & Krabbe (8 Stk.)', 8.90),
-    (@rId, 'Sashimi Mix', 'Lachs, Thunfisch, Garnele', 14.90),
-    (@rId, 'Miso Suppe', NULL, 3.20);
+
+DECLARE @catSakSalat INT, @catSakGetraenke INT, @catSakDessert INT;
+-- @cId ist bereits die zuvor angelegte "Sushi"-Kategorie.
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Salat');     SET @catSakSalat = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Getraenke'); SET @catSakGetraenke = SCOPE_IDENTITY();
+INSERT INTO MenuCategory (restaurant_id, name) VALUES (@rId, 'Dessert');   SET @catSakDessert = SCOPE_IDENTITY();
+
+DECLARE @itemsSakura TABLE (Name NVARCHAR(100), Description NVARCHAR(255), Price DECIMAL(10,2), CategoryId INT);
+INSERT INTO @itemsSakura (Name, Description, Price, CategoryId) VALUES
+    ('Sake Nigiri (2 St.)',      'Lachs',                          4.80, @cId),
+    ('Maguro Nigiri (2 St.)',    'Thunfisch',                      5.20, @cId),
+    ('California Roll (8 St.)',  'Krabben, Avocado, Gurke',        8.90, @cId),
+    ('Spicy Tuna Roll (8 St.)',  'Thunfisch, Sriracha',            9.50, @cId),
+    ('Veggie Roll (8 St.)',      'Gurke, Avocado, Karotte',        7.90, @cId),
+    ('Sashimi Mix (10 St.)',     'Lachs, Thunfisch, Garnele',     16.90, @cId),
+    ('Dragon Roll (8 St.)',      'Garnele, Avocado, Teriyaki',    12.50, @cId),
+    ('Miso Suppe',               NULL,                              3.20, @catSakSalat),
+    ('Edamame',                  'Gesalzen',                        3.50, @catSakSalat),
+    ('Wakame Salat',             'Meeresalgen, Sesam',              4.90, @catSakSalat),
+    ('Gruener Tee',              'Kanne 0,5l',                      3.20, @catSakGetraenke),
+    ('Japanisches Bier',         'Asahi 0,33l',                     4.00, @catSakGetraenke),
+    ('Sake',                     '0,1l warm',                       5.50, @catSakGetraenke),
+    ('Mochi Eis',                'Gruener Tee oder Mango',          4.50, @catSakDessert),
+    ('Dorayaki',                 'Japanischer Pancake mit Anko',    3.90, @catSakDessert);
+
+INSERT INTO MenuItem (restaurant_id, name, description, price)
+SELECT @rId, Name, Description, Price FROM @itemsSakura;
+
 INSERT INTO MenuItemMenuCategory (menu_item_id, menu_category_id, restaurant_id)
-SELECT id, @cId, @rId FROM MenuItem WHERE restaurant_id = @rId;
+SELECT mi.id, i.CategoryId, @rId
+FROM @itemsSakura i
+JOIN MenuItem mi ON mi.restaurant_id = @rId AND mi.name = i.Name;
+
+DELETE FROM @itemsSakura;
 
 -- Pizzeria Napoli Wien
 SELECT @rId = RestaurantId, @cId = CategoryId FROM @RestaurantMap WHERE Name = 'Pizzeria Napoli Wien';

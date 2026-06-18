@@ -149,7 +149,7 @@ Content-Type: application/json
 {
   "items": [
     {
-      "menuItemId": 12,
+      "menuItemId": 1,
       "quantity": 2
     }
   ],
