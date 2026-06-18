@@ -37,23 +37,18 @@ DECLARE @Restaurants TABLE (
 INSERT INTO @Restaurants (Name, Street, Number, Zip, City, Lon, Lat, WebhookUrl, ImagePath, RawApiKey, CategoryName, MinOrderValue, MaxDistance, OpenTime, CloseTime)
 VALUES
 -- Hagenberg / Mühlviertel cluster
-('Restaurant Nimmersatt',     'Softwarepark',        '11', '4232', 'Hagenberg', 14.5144, 48.3684, 'https://api.nimmersatt.at/bite',        'img/nimmersatt.png',     'nimmersatt-api-key-2026',     'Pizza & Pasta', 15.00, 15.0, '11:00', '22:00'),
-('Pizzeria Da Mario',         'Linzer Strasse',      '5',  '4232', 'Hagenberg', 14.5180, 48.3670, 'https://hooks.damario.at/bite',         'img/damario.png',        'damario-api-key-2026',        'Pizza',         12.00, 12.0, '11:00', '23:00'),
-('Gasthaus Goldener Hirsch',  'Stadtplatz',          '3',  '4230', 'Pregarten', 14.5300, 48.3550, 'https://hooks.goldenerhirsch.at/bite',  'img/goldenerhirsch.png', 'goldenerhirsch-api-key-2026', 'Hausmannskost', 18.00, 20.0, '10:00', '21:00'),
-('China Restaurant Lotus',    'Boehmergasse',        '7',  '4240', 'Freistadt', 14.5050, 48.5110, 'https://hooks.lotus.at/bite',           'img/lotus.png',          'lotus-api-key-2026',          'Asiatisch',     14.00, 18.0, '11:30', '21:30'),
+('Restaurant Nimmersatt',     'Softwarepark',        '11', '4232', 'Hagenberg', 14.5144, 48.3684, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',        'img/nimmersatt.png',     'nimmersatt-api-key-2026',     'Pizza & Pasta', 15.00, 15.0, '11:00', '22:00'),
+('Pizzeria Da Mario',         'Linzer Strasse',      '5',  '4232', 'Hagenberg', 14.5180, 48.3670, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',         'img/damario.png',        'damario-api-key-2026',        'Pizza',         12.00, 12.0, '11:00', '23:00'),
+('Gasthaus Goldener Hirsch',  'Stadtplatz',          '3',  '4230', 'Pregarten', 14.5300, 48.3550, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',  'img/goldenerhirsch.png', 'goldenerhirsch-api-key-2026', 'Hausmannskost', 18.00, 20.0, '10:00', '21:00'),
+('China Restaurant Lotus',    'Boehmergasse',        '7',  '4240', 'Freistadt', 14.5050, 48.5110, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',           'img/lotus.png',          'lotus-api-key-2026',          'Asiatisch',     14.00, 18.0, '11:30', '21:30'),
 -- Linz cluster
-('Pasta Fresca Linz',         'Landstrasse',         '20', '4020', 'Linz',      14.2900, 48.3000, 'https://hooks.pastafresca.at/bite',     'img/pastafresca.png',    'pastafresca-api-key-2026',    'Pasta',         13.00, 10.0, '11:00', '22:00'),
-('Linzer Wirtshaus',          'Hauptplatz',          '1',  '4020', 'Linz',      14.2860, 48.3060, 'https://hooks.linzerwirtshaus.at/bite', 'img/linzerwirtshaus.png','linzerwirtshaus-api-key-2026','Hausmannskost', 16.00, 12.0, '10:30', '22:30'),
-('Curry Palace Urfahr',       'Hauptstrasse',        '45', '4040', 'Linz',      14.2850, 48.3150, 'https://hooks.currypalace.at/bite',     'img/currypalace.png',    'currypalace-api-key-2026',    'Indisch',       15.00, 9.0,  '11:30', '21:30'),
+('Pasta Fresca Linz',         'Landstrasse',         '20', '4020', 'Linz',      14.2900, 48.3000, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',     'img/pastafresca.png',    'pastafresca-api-key-2026',    'Pasta',         13.00, 10.0, '11:00', '22:00'),
+('Linzer Wirtshaus',          'Hauptplatz',          '1',  '4020', 'Linz',      14.2860, 48.3060, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544', 'img/linzerwirtshaus.png','linzerwirtshaus-api-key-2026','Hausmannskost', 16.00, 12.0, '10:30', '22:30'),
+('Curry Palace Urfahr',       'Hauptstrasse',        '45', '4040', 'Linz',      14.2850, 48.3150, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',     'img/currypalace.png',    'currypalace-api-key-2026',    'Indisch',       15.00, 9.0,  '11:30', '21:30'),
 -- Wien cluster (multiple districts for realistic geo testing)
-('Burger Bude Wien',          'Hauptstrasse',        '42', '1010', 'Wien',      16.3738, 48.2082, 'https://hooks.burgerbude.at/bite',      'img/burgerbude.png',     'burger-bude-api-key-2026',    'Burger',        20.00, 10.0, '11:00', '23:00'),
-('Sakura Sushi',              'Mariahilfer Strasse', '88', '1060', 'Wien',      16.3540, 48.1970, 'https://webhooks.sakura-sushi.at/orders','img/sakura.png',        'sakura-sushi-api-key-2026',   'Sushi',         25.00, 12.0, '12:00', '22:00'),
-('Pizzeria Napoli Wien',      'Praterstrasse',       '15', '1020', 'Wien',      16.3920, 48.2180, 'https://hooks.napoli.at/bite',          'img/napoli.png',         'napoli-api-key-2026',         'Pizza',         15.00, 8.0,  '11:00', '23:30'),
-('Falafel King Ottakring',    'Thaliastrasse',       '30', '1160', 'Wien',      16.3100, 48.2120, 'https://hooks.falafelking.at/bite',     'img/falafelking.png',    'falafelking-api-key-2026',    'Vegetarisch',   10.00, 7.0,  '10:00', '22:00'),
-('Steakhouse Favoriten',      'Favoritenstrasse',    '120','1100', 'Wien',      16.3750, 48.1700, 'https://hooks.steakhouse.at/bite',      'img/steakhouse.png',     'steakhouse-api-key-2026',     'Steaks',        30.00, 9.0,  '17:00', '23:00'),
-('Ramen Bar Donaustadt',      'Donaustadtstrasse',   '8',  '1220', 'Wien',      16.4400, 48.2300, 'https://hooks.ramenbar.at/bite',        'img/ramenbar.png',       'ramenbar-api-key-2026',       'Asiatisch',     18.00, 11.0, '11:30', '21:00');
-
--- PRINT (SELECT CAST(COUNT(*) AS VARCHAR) FROM @Restaurants) + ' restaurants defined.';
+('Burger Bude Wien',          'Hauptstrasse',        '42', '1010', 'Wien',      16.3738, 48.2082, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',      'img/burgerbude.png',     'burger-bude-api-key-2026',    'Burger',        20.00, 10.0, '11:00', '23:00'),
+('Sakura Sushi',              'Mariahilfer Strasse', '88', '1060', 'Wien',      16.3540, 48.1970, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544','img/sakura.png',        'sakura-sushi-api-key-2026',   'Sushi',         25.00, 12.0, '12:00', '22:00'),
+('Pizzeria Napoli Wien',      'Praterstrasse',       '15', '1020', 'Wien',      16.3920, 48.2180, 'https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544',          'img/napoli.png',         'napoli-api-key-2026',         'Pizza',         15.00, 8.0,  '11:00', '23:3₀'),
 
 -- ============================================================
 -- 2. INSERT RESTAURANTS, ADDRESSES, CATEGORIES, MENU ITEMS,
