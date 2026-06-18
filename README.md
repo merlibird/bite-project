@@ -10,11 +10,9 @@ derzeit am Markt befindlichen Systeme (zumindest technologisch) alt aussehen lä
 ## Setup 
 
 #### Starten der Db
-Analog zu Übung mit dem Befehl "docker compose up" im Order /db-sqlserver/
+Analog zu Übung mit dem Befehl `docker compose up` im Order `/db-sqlserver/`
 
 Dabei werden zwei Datenbanken angelegt: **`BiteDb`** (mit Beispieldaten, von der API genutzt) und **`BiteTestDb`** (leer, nur Schema – die Integrationstests laufen ausschließlich gegen diese und lassen die Beispieldaten unberührt).
-
-`[@Tarik: Setup finalisieren]`
 
 ## Technischer Aufbau
 
