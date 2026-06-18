@@ -15,9 +15,7 @@ public class RestaurantService(
     TimeProvider timeProvider,
     IDeliveryZoneDao deliveryZoneDao,
     IDeliveryFeeRuleDao deliveryFeeRuleDao) : IRestaurantService
-{
-    //private const string ImageBaseDir = "wwwroot/images/restaurants";
-    
+{   
     // image checks were created with the help of AI
     private const long MaxImageSizeBytes = 5 * 1024 * 1024; // 5 MB
     private static readonly string[] AllowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];

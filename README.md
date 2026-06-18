@@ -78,7 +78,7 @@ Kurzerläuterung des durchgängigen Beispiels (Registrierung → Bestellstatus):
 1. **POST `/api/Restaurants`** (US 1, multipart/form-data) – Restaurant registrieren. → liefert `restaurantId` + `apiKey` (Key für alle folgenden geschützten Requests).
 2. **PUT `/api/Restaurants/{restaurantId}/delivery-conditions`** (US 3, `X-Api-Key`) – Lieferzonen & -kosten festlegen/ersetzen.
 3. **PUT `/api/restaurants/{restaurantId}/menu`** (US 4, `X-Api-Key`) – Speisekarte anlegen/ersetzen.
-4. **GET `/api/Restaurants?latitude=…&longitude=…&openNow=…&count=…`** (US 5) – Restaurants in der Nähe suchen, (Kundensicht).
+4. **GET `/api/Restaurants?latitude=…&longitude=…&openNow=…&count=…`** (US 5) – Restaurants in der Nähe suchen, (Kundensicht, Hinweis-Designentscheidung: Restaurants, die nicht zum Kunden liefern, werden auch nicht angezeigt).
 5. **GET `/api/restaurants/{restaurantId}/menu`** (US 6) – Speisekarte abrufen.
 6. **POST `/api/restaurants/{restaurantId}/orders/price`** (US 7) – Preisvorschau inkl. Lieferkosten, im Body befinden sich die Artikel mit denen die Preisvorschau letztendlich dann zu berechnen ist.
 7. **POST `/api/restaurants/{restaurantId}/orders`** (US 8) – Bestellung verbindlich aufgeben. → liefert `orderCode`; zusätzlich geht ein Webhook (US 9) an das Restaurant, der die **Status-Änderungs-Links** enthält (je ein einmalig gültiges Token pro Folgestatus).
@@ -225,7 +225,7 @@ Getroffene Maßnahmen:
 
 ### 8. Wie haben Sie sichergestellt, dass die Lieferbedingungen (Mindestpreis und Versandbedingungen) möglichst einfach erweiterbar sind? Beispielsweise könnten die Versandkosten von der Postleitzahl abhängig werden. Beschreiben Sie die relevanten Stellen des Designs (Klassen-Diagramm).
 
-![Klassen-Diagramm](docs/images/class_diagram.png)
+<img src="docs/images/class_diagram.png" alt="Klassen-Diagramm" height="400">
 
 Unser Design basiert auf einer klaren Trennung zwischen geografischen Bedingungen (Wo wird geliefert?) und preislichen Bedingungen (Was kostet es
   dort?). Dies haben wir durch zwei zentrale Entitäten gelöst:
@@ -246,7 +246,7 @@ Unser Design basiert auf einer klaren Trennung zwischen geografischen Bedingunge
          * Bisher: WHERE distance <= MaxDistance
          * Neu (flexibel): WHERE (ZipCode IS NULL OR ZipCode = @UserZip) AND (MaxDistance IS NULL OR distance <= MaxDistance)
      * Flexible Kriterien: Durch das Hinzufügen weiterer (nullable) Spalten in DeliveryZone (z.B. City, District oder sogar DayOfWeek) kann das System
-     zu einem regelbasierten "Eintabellenmodell" für die Gebietsbestimmung ausgebaut werden, ohne die Grundstruktur der Preisregeln
+     zu einem regelbasierten "Einrelationenmodell" für die Gebietsbestimmung ausgebaut werden, ohne die Grundstruktur der Preisregeln
      (DeliveryFeeRule) ändern zu müssen.
 
   3. Vorteile dieses Designs:
