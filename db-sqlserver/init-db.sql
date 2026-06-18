@@ -55,7 +55,7 @@ CREATE TABLE Restaurant (
     id               INT IDENTITY(1,1),
     name             NVARCHAR(100) NOT NULL,
     address_id       INT NOT NULL,
-    webhook_url      NVARCHAR(255),
+    webhook_url      NVARCHAR(255) NOT NULL,
     title_image_path NVARCHAR(255),
     api_key          NVARCHAR(100) NOT NULL,
     created_at       DATETIME DEFAULT GETDATE(),
