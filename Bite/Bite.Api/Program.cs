@@ -31,8 +31,6 @@ builder.Services.AddOpenApiDocument(settings =>
     settings.Title = "Bite API";
 });
 
-builder.Services.AddCors();
-
 // Middleware for global exception handling
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
