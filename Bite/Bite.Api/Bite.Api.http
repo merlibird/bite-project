@@ -4,6 +4,7 @@
 @ApiKeyNim = nimmersatt-api-key-2026
 @ApiKeyBur = burger-bude-api-key-2026
 @ApiKeySak = sakura-sushi-api-key-2026
+@NewApiKey = hierEinfugen
 
 # Suchparameter (US 5) – zum Testen hier anpassen
 @searchLatitude = 48.3692
@@ -22,7 +23,7 @@ Accept: application/json
 ###
 
 ### Register a new Restaurant (US 1)
-# Image upload only possible via Swagger UI (http://localhost:5126/swagger)
+# Image upload only possible via Swagger UI (https://localhost:7046/swagger)
 # VS .http-Runner does not support file upload.
 POST {{HostAddress}}/api/Restaurants
 Content-Type: multipart/form-data; boundary=WebAppBoundary
@@ -62,7 +63,7 @@ Content-Disposition: form-data; name="Latitude"
 --WebAppBoundary
 Content-Disposition: form-data; name="WebhookUrl"
 
-https://webhook.site/test
+https://webhook.site/3fa5de61-13da-4288-b8d5-39a1d53d2544
 --WebAppBoundary
 Content-Disposition: form-data; name="OpeningHoursJson"
 Content-Type: application/json
@@ -191,13 +192,13 @@ Content-Type: application/json
 ###
 
 ### Get Order Status (US 12)
-GET {{HostAddress}}/api/Orders/7BP83YZR/status
+GET {{HostAddress}}/api/Orders/4ZS22Z5X/status
 Accept: application/json
 
 ###
 
 ### Change Order Status (US 10)
-PATCH {{HostAddress}}/api/Orders/7BP83YZR
+PATCH {{HostAddress}}/api/Orders/4ZS22Z5X
 X-Api-Key: {{ApiKeyNim}}
 Content-Type: application/json
 
@@ -209,6 +210,6 @@ Content-Type: application/json
 
 ### Apply Status Token via Link (US 11)
 # Die URL muss das Format /api/orders/{orderCode}/status-change/{token} haben.
-GET {{HostAddress}}/api/orders/MC9QEPB6/status-change/SGVsbG8tV29ybGQtaW4tQmFzZTY0VXJsLWZvcm1hdC0xMjM
+GET {{HostAddress}}/api/orders/4ZS22Z5X/status-change/yCaUMYWgga6mpfUeJ1hLeKLu6jnCk6QVJBdel5AvoCM
 X-Api-Key: {{ApiKeyNim}}
 Accept: application/json
