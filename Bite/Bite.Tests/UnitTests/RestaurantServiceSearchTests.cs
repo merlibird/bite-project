@@ -18,11 +18,17 @@ public class RestaurantServiceSearchTests
     private readonly FakeTimeProvider timeProvider = new(new DateTimeOffset(2026, 6, 17, 12, 0, 0, TimeSpan.Zero)); // Wednesday 12:00
 
     private readonly List<Restaurant> restaurants = [];
+    private readonly List<Address> addresses = [];
+    private readonly List<OpeningHourSlot> openingHours = [];
+    private readonly List<DeliveryZone> deliveryZones = [];
 
     public RestaurantServiceSearchTests()
     {
         timeProvider.SetLocalTimeZone(TimeZoneInfo.Utc);
         restaurantDao.FindAllAsync(Arg.Any<CancellationToken>()).Returns(_ => restaurants);
+        addressDao.FindAllAsync(Arg.Any<CancellationToken>()).Returns(_ => addresses);
+        openingHourSlotDao.FindAllAsync(Arg.Any<CancellationToken>()).Returns(_ => openingHours);
+        deliveryZoneDao.FindAllAsync(Arg.Any<CancellationToken>()).Returns(_ => deliveryZones);
     }
 
     private RestaurantService CreateService() => new(
@@ -36,16 +42,16 @@ public class RestaurantServiceSearchTests
         int addressId = id * 10;
         restaurants.Add(new Restaurant(id, $"R{id}", addressId, "https://hook", "key"));
 
-        addressDao.FindByIdAsync(addressId, Arg.Any<CancellationToken>())
-            .Returns(hasAddress ? new Address(addressId, "S", "1", "1010", "Vienna", "AT", longitude: 0, latitude: latitude) : null);
+        if (hasAddress)
+        {
+            addresses.Add(new Address(addressId, "S", "1", "1010", "Vienna", "AT", longitude: 0, latitude: latitude));
+        }
 
-        var slots = open
-            ? new[] { new OpeningHourSlot(0, id, 3, TimeSpan.Zero, new TimeSpan(23, 0, 0)) } // Wed 00:00–23:00
-            : new[] { new OpeningHourSlot(0, id, 1, TimeSpan.Zero, new TimeSpan(23, 0, 0)) }; // Mon only -> closed
-        openingHourSlotDao.FindByRestaurantIdAsync(id, Arg.Any<CancellationToken>()).Returns(slots);
+        openingHours.Add(open
+            ? new OpeningHourSlot(0, id, 3, TimeSpan.Zero, new TimeSpan(23, 0, 0))  // Wed 00:00–23:00
+            : new OpeningHourSlot(0, id, 1, TimeSpan.Zero, new TimeSpan(23, 0, 0))); // Mon only -> closed
 
-        deliveryZoneDao.FindByRestaurantIdAsync(id, Arg.Any<CancellationToken>())
-            .Returns(new[] { new DeliveryZone(id, id, minOrderValue: 0, maxDistance: reachable ? 5 : 0.001) });
+        deliveryZones.Add(new DeliveryZone(id, id, minOrderValue: 0, maxDistance: reachable ? 5 : 0.001));
     }
 
     // Searches from the origin (0,0), where the configured restaurants sit a few km north.

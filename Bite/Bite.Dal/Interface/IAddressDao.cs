@@ -10,5 +10,7 @@ public interface IAddressDao
 {
     Task<Address?> FindByIdAsync(int id, CancellationToken cancellationToken = default);
 
+    Task<IEnumerable<Address>> FindAllAsync(CancellationToken cancellationToken = default);
+
     Task<int> InsertAsync(Address address, CancellationToken cancellationToken = default);
 }

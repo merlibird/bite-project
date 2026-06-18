@@ -32,6 +32,11 @@ public class DeliveryZoneDao(IConnectionFactory connectionFactory) : IDeliveryZo
             cancellationToken);
     }
 
+    public async Task<IEnumerable<DeliveryZone>> FindAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync("select * from DeliveryZone", MapRowToDeliveryZone, [], cancellationToken);
+    }
+
     public async Task<int> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(

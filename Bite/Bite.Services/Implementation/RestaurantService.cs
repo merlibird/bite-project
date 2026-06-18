@@ -157,7 +157,17 @@ public class RestaurantService(
             CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetLocalNow().DateTime;
+
         var restaurants = await restaurantDao.FindAllAsync(cancellationToken);
+        var addressesById = (await addressDao.FindAllAsync(cancellationToken))
+            .ToDictionary(a => a.Id);
+        var openingHoursByRestaurant = (await openingHourSlotDao.FindAllAsync(cancellationToken))
+            .GroupBy(h => h.RestaurantId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        var deliveryZonesByRestaurant = (await deliveryZoneDao.FindAllAsync(cancellationToken))
+            .GroupBy(z => z.RestaurantId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var searchItems = new List<(
             Restaurant Restaurant,
             Address Address,
@@ -167,13 +177,12 @@ public class RestaurantService(
 
         foreach (var restaurant in restaurants)
         {
-            var address = await addressDao.FindByIdAsync(restaurant.AddressId, cancellationToken);
-            if (address is null)
+            if (!addressesById.TryGetValue(restaurant.AddressId, out var address))
             {
                 continue;
             }
 
-            var openingHours = (await openingHourSlotDao.FindByRestaurantIdAsync(restaurant.Id, cancellationToken)).ToList();
+            var openingHours = openingHoursByRestaurant.GetValueOrDefault(restaurant.Id, []);
             var isOpenNow = IsOpenAt(openingHours, now);
 
             if (openNowOnly && !isOpenNow)
@@ -188,7 +197,7 @@ public class RestaurantService(
                 address.Longitude);
 
             // Check if user is within any delivery zone of the restaurant
-            var deliveryZones = await deliveryZoneDao.FindByRestaurantIdAsync(restaurant.Id, cancellationToken);
+            var deliveryZones = deliveryZonesByRestaurant.GetValueOrDefault(restaurant.Id, []);
             if (!deliveryZones.Any(z => distanceInKm <= z.MaxDistance))
             {
                 continue;

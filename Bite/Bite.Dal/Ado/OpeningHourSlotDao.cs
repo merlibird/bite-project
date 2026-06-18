@@ -33,6 +33,11 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             cancellationToken);
     }
 
+    public async Task<IEnumerable<OpeningHourSlot>> FindAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync("select * from OpeningHourSlot", MapRowToOpeningHourSlot, [], cancellationToken);
+    }
+
     public async Task<int> InsertAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(

@@ -38,6 +38,11 @@ public class AddressDao(IConnectionFactory connectionFactory) : IAddressDao
             cancellationToken);
     }
 
+    public async Task<IEnumerable<Address>> FindAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync("select * from Address", MapRowToAddress, [], cancellationToken);
+    }
+
     public async Task<int> InsertAsync(Address address, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
