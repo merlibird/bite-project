@@ -32,7 +32,6 @@ public class OrderStatusTokenDao(IConnectionFactory connectionFactory) : IOrderS
 
     public async Task<int> InsertAsync(OrderStatusToken token, CancellationToken cancellationToken = default)
     {
-        // created_at is set by the database default (GETDATE()).
         return await template.QuerySingleAsync(
             """
             insert into OrderStatusToken

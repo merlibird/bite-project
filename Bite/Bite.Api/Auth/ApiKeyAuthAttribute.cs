@@ -29,7 +29,8 @@ public sealed class ApiKeyAuthAttribute : Attribute, IAsyncAuthorizationFilter
             context.Result = new UnauthorizedObjectResult(new { message = "Invalid or missing API key." });
             return;
         }
-
+        
+        // Store the authenticated restaurant ID in the HttpContext for later use in controllers
         http.Items[RestaurantIdItem] = restaurant.Id;
     }
 }
