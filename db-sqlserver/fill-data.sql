@@ -1,3 +1,4 @@
+-- test data / seed was created with the help of AI
 USE [$(DbName)];
 GO
 

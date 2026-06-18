@@ -2,6 +2,7 @@ using Bite.Domain;
 
 namespace Bite.Services.Interface;
 
+// webhook logic was created with the help of AI
 public sealed record OrderWebhookPayload(
     string OrderCode,
     IReadOnlyList<OrderWebhookItem> Items,

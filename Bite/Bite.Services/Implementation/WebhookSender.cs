@@ -3,6 +3,7 @@ using System.Text;
 
 namespace Bite.Services.Implementation;
 
+// webhook logic was created with the help of AI
 public sealed class WebhookSender : IWebhookSender, IDisposable
 {
     private readonly HttpClient httpClient = new(new SocketsHttpHandler

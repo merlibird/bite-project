@@ -5,6 +5,7 @@ using System.Data;
 
 namespace Bite.Dal.Ado;
 
+// webhook logic was created with the help of AI
 public class WebhookOutboxDao(IConnectionFactory connectionFactory) : IWebhookOutboxDao
 {
     private readonly AdoTemplate template = new AdoTemplate(connectionFactory);

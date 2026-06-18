@@ -4,6 +4,7 @@ using Bite.Services.Interface;
 
 namespace Bite.Api.Webhooks;
 
+// webhook logic was created with the help of AI
 public sealed class WebhookOutboxWorker(
     IServiceScopeFactory scopeFactory,
     IWebhookSender sender,

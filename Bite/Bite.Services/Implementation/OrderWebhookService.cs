@@ -6,6 +6,7 @@ using System.Text.Json;
 
 namespace Bite.Services.Implementation;
 
+// webhook logic was created with the help of AI
 public sealed class OrderWebhookService(
     IRestaurantDao restaurantDao,
     IWebhookOutboxDao outboxDao,

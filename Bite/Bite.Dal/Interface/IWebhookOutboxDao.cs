@@ -2,6 +2,7 @@ using Bite.Domain;
 
 namespace Bite.Dal.Interface;
 
+// webhook logic was created with the help of AI
 public interface IWebhookOutboxDao
 {
     Task InsertAsync(int orderId, string url, string payload, CancellationToken cancellationToken = default);
