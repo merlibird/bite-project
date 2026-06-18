@@ -17,6 +17,85 @@ public class RestaurantService(
     IDeliveryFeeRuleDao deliveryFeeRuleDao) : IRestaurantService
 {
     //private const string ImageBaseDir = "wwwroot/images/restaurants";
+    
+    // image checks were created with the help of AI
+    private const long MaxImageSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private static readonly string[] AllowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+
+    // Returns an error message if the upload is not an acceptable image, or null if it is valid.
+    private static string? ValidateImage(Stream imageStream, string imageExtension)
+    {
+        var extension = imageExtension.ToLowerInvariant();
+        if (!AllowedImageExtensions.Contains(extension))
+        {
+            return $"Unsupported image type '{imageExtension}'. Allowed: {string.Join(", ", AllowedImageExtensions)}.";
+        }
+
+        if (!imageStream.CanSeek)
+        {
+            return "The uploaded image could not be validated (stream is not seekable).";
+        }
+
+        if (imageStream.Length < 10)
+        {
+            return $"The uploaded image is too small or invalid ({imageStream.Length} bytes received).";
+        }
+
+        if (imageStream.Length > MaxImageSizeBytes)
+        {
+            return $"The uploaded image exceeds the maximum size of {MaxImageSizeBytes / (1024 * 1024)} MB.";
+        }
+
+        var detectedFormat = DetectImageFormat(imageStream);
+        if (detectedFormat is null)
+        {
+            return "The uploaded file is not a valid image (unrecognized file header).";
+        }
+
+        // Guard against a mismatched extension (e.g. a PNG renamed to .jpg).
+        var extensionMatchesContent = detectedFormat switch
+        {
+            "jpeg" => extension is ".jpg" or ".jpeg",
+            "png" => extension is ".png",
+            "webp" => extension is ".webp",
+            _ => false
+        };
+        if (!extensionMatchesContent)
+        {
+            return $"The file content ({detectedFormat}) does not match the file extension '{imageExtension}'.";
+        }
+
+        return null;
+    }
+
+    // Inspects the leading bytes (magic numbers) to identify the real image format. Restores the stream position.
+    private static string? DetectImageFormat(Stream stream)
+    {
+        long originalPosition = stream.Position;
+        Span<byte> header = stackalloc byte[12];
+        stream.Position = 0;
+        int read = stream.Read(header);
+        stream.Position = originalPosition;
+
+        if (read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
+        {
+            return "jpeg";
+        }
+
+        if (read >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47
+            && header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A)
+        {
+            return "png";
+        }
+
+        if (read >= 12 && header[0] == (byte)'R' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'F'
+            && header[8] == (byte)'W' && header[9] == (byte)'E' && header[10] == (byte)'B' && header[11] == (byte)'P')
+        {
+            return "webp";
+        }
+
+        return null;
+    }
 
     public async Task<ServiceResult<bool>> UpdateDeliveryConditionsAsync(
         int restaurantId,
@@ -85,11 +164,10 @@ public class RestaurantService(
         string? imagePath = null;
         if (imageStream != null && !string.IsNullOrEmpty(imageExtension))
         {
-            if (imageStream.Length < 10)
+            var imageError = ValidateImage(imageStream, imageExtension);
+            if (imageError != null)
             {
-                return ServiceResult<(int, string)>.Failure(
-                    $"The uploaded image is too small or invalid ({imageStream.Length} bytes received).",
-                    ServiceResultType.Error);
+                return ServiceResult<(int, string)>.Failure(imageError, ServiceResultType.ValidationError);
             }
 
             var fileName = $"{Guid.NewGuid()}{imageExtension}";
@@ -101,6 +179,7 @@ public class RestaurantService(
                 Directory.CreateDirectory(directory);
             }
 
+            imageStream.Position = 0;
             await using var fileStream = new FileStream(fullPath, FileMode.Create);
             await imageStream.CopyToAsync(fileStream, cancellationToken);
             imagePath = $"/images/restaurants/{fileName}";
