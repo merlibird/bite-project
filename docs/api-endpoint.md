@@ -1,65 +1,80 @@
 # API-Endpoints
 
-## 1
+Basis-Pfad: `/api`
+Auth (🔒): API-Key im Header `X-Api-Key`. Restaurants dürfen nur sich selbst ändern.
 
-* Post: `/restaurants`
+## Restaurants
 
-  (Registriert ein neues Restaurant und liefert API-Key retour)
+### 1 · Restaurant registrieren
 
-## 2
+* `POST /api/restaurants` — `multipart/form-data`
 
-## 3
+  Registriert ein Restaurant (inkl. Adresse, Öffnungszeiten, Cover-Bild, Webhook-URL) und liefert `restaurantId` + API-Key retour.
 
-* Put: `/restaurants/{id}/delivery-conditions`
+### 2 · Restaurants suchen
 
-  (erstellen und updaten der lieferbedingungen, realisieren von Upsert)
+* `GET /api/restaurants?latitude=&longitude=&openNow=&count=`
 
-## 4
+  Liefert Restaurants nach GPS sortiert (Distanz), optional nur geöffnete (`openNow`), Anzahl per `count` (1–100, Default 10).
 
-* Put: `/restaurants/{id}/menu`
+### 3 · Lieferbedingungen setzen 🔒
 
-  (erstellen / updaten einer Speisekarte, Api erforderlich)
+* `PUT /api/restaurants/{id}/delivery-conditions`
 
-## 5
+  Upsert der Lieferzonen + Gebührenregeln (Body: Liste von Zonen mit `maxDistance`, `minOrderValue`, `feeRules`).
 
-* Get: `/restaurants`
+## Speisekarte
 
-  (query params für geöffnete Restaurants, Sortierung GPS, anzahl der restaurants(?) )
+### 4 · Speisekarte updaten 🔒
 
-## 6
+* `PUT /api/restaurants/{id}/menu`
 
-* Get: `/restaurants/{id}/menu`
+  Erstellt / aktualisiert Kategorien + Items (Upsert per `id`).
 
-  (abfragen der Speisekarte)
+### 5 · Speisekarte abfragen
 
-## 7
+* `GET /api/restaurants/{id}/menu`
 
-* Post: `/restaurants/{id}/orders/price`
+  Liefert die Speisekarte (Kategorien mit Items).
 
-  (im Body dann die ver. MenuItems, Adresse)
+## Bestellungen
 
-## 8
+### 6 · Preis berechnen
 
-* Post: `/restaurants/{id}/orders`
+* `POST /api/restaurants/{restaurantId}/orders/price`
 
-  (erstellen einer bestellung retourgeben von Code, damit Status abgefragt werden kann)
+  Body: Items + Lieferadresse. Liefert `subtotal`, `deliveryFee`, `totalPrice`.
 
-## 9
+### 7 · Bestellung aufgeben
 
-externe API
+* `POST /api/restaurants/{restaurantId}/orders`
 
-## 10
+  Body: Items + Lieferadresse. Liefert `orderCode` (für Status-Abfrage).
 
-* PATCH: `orders/{orderCode}`
+### 8 · Status abfragen
 
-  (trotzdem API-Key abfragen, Status im http-body)
+* `GET /api/orders/{orderCode}/status`
 
-## 11
+  Liefert aktuellen Status.
 
-* Get: `orders/{orderCode}/status-change/{token}`
+### 9 · Status ändern (Restaurant) 🔒
 
-  (API key erforderlich)
+* `PATCH /api/orders/{orderCode}`
 
-## 12
+  Body: `{ "status": "..." }`. Statusübergänge sind validiert.
 
-* Get: `/orders/{orderCode}/status`
+### 10 · Status per Token ändern 🔒
+
+* `GET /api/orders/{orderCode}/status-change/{token}`
+
+  Status-Wechsel über Magic-Link-Token (aus Webhook/Mail).
+
+## Externe API (Webhook)
+
+### 11 · Bestelleingang
+
+Beim Aufgeben einer Bestellung wird die `webhookUrl` des Restaurants benachrichtigt (transaktionaler Outbox + Polling-Worker).
+
+---
+
+**Order-Status:** `RECEIVED` → `SENT_TO_RESTAURANT` → `IN_PREPARATION` → `OUT_FOR_DELIVERY` → `DELIVERED`; `CANCELLED` aus jedem Status außer `DELIVERED`/`CANCELLED`.
