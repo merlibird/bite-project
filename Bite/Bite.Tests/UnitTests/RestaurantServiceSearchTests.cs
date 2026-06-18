@@ -5,6 +5,7 @@ using Bite.Services.Interface;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.UnitTests;
 
 public class RestaurantServiceSearchTests

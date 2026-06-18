@@ -9,6 +9,7 @@ using System.Reflection.Emit;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.IntegrationTests;
 
 [Collection("Database")]
@@ -39,7 +40,6 @@ public class AddressDaoTests : IAsyncLifetime
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }
 
-    // afterEach --> do nothing
     public Task DisposeAsync() => Task.CompletedTask;
 
     // -------------------------------------------------------------------------

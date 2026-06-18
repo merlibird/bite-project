@@ -302,7 +302,6 @@ public class OrderService(
         }
         else if (rules.Count > 0)
         {
-            // Fallback: If subtotal > all MaxOrderValues, default to 0 as in requirements defined.
             deliveryFee = 0;
         }
 

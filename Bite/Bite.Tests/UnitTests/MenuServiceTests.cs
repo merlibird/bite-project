@@ -4,6 +4,7 @@ using Bite.Services.Common;
 using Bite.Services.Implementation;
 using NSubstitute;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.UnitTests;
 
 public class MenuServiceTests

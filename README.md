@@ -305,7 +305,7 @@ Wir haben im Rahmen der Projektarbeit KI-Werkzeuge (insbesondere ChatGPT, Claude
 
 Konkret nutzten wir KI für Bereiche mit hohem Boilerplate-Anteil, etwa grundlegende CRUD-Operationen, DTO-Mappings und Validierungslogik. Auch bei der Erstellung von Testdaten und Seed-Skripten sowie beim Debugging komplexer Fehlermeldungen (z. B. LINQ-Ausdrücke) war die KI hilfreich.
 
-Gut funktioniert hat die schnelle Bereitstellung strukturierter Code-Grundgerüste und die Erklärung von Framework-Konzepten wie ASP.NET Core Middleware oder Webhook-Konzepten. 
+Gut funktioniert hat die schnelle Bereitstellung strukturierter Code-Grundgerüste und die Erklärung von Framework-Konzepten wie ASP.NET Core Middleware, Bildvalidierung oder Webhook-Konzepten.  
 
 Gescheitert sind wir hingegen bei domänenspezifischen Geschäftslogiken wie der korrekten Staffelung von Liefergebühren oder dem Outbox-Pattern – hier lieferte die KI oberflächliche Lösungen ohne Verständnis für unseren Architekturkontext, da es auch nicht möglich war ausreichend Dateien hochzuladen, um ihm den notwendigen Kontext zu geben.
 

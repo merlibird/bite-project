@@ -1,6 +1,7 @@
 using Bite.Domain;
 using Bite.Services.Implementation;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.UnitTests;
 
 public class RestaurantServiceOpeningHoursTests

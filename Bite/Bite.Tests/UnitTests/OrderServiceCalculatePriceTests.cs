@@ -5,6 +5,7 @@ using Bite.Services.Implementation;
 using Bite.Services.Interface;
 using NSubstitute;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.UnitTests;
 
 public class OrderServiceCalculatePriceTests
@@ -14,9 +15,9 @@ public class OrderServiceCalculatePriceTests
     private const int MenuItemId = 100;
     private const decimal ItemPrice = 10m;
 
-    private const int NearZoneId = 5;   // "unter 10 km"
-    private const int FarZoneId = 6;    // "ab 10 km"
-    private const double FarZoneMaxKm = 50; // test-only finite cap (spec says "ab 10 km" is open-ended)
+    private const int NearZoneId = 5;   // "below 10 km"
+    private const int FarZoneId = 6;    // "from 10 km"
+    private const double FarZoneMaxKm = 50; // test-only finite cap (spec says "from 10 km" is open-ended)
 
     // Restaurant sits at (0,0). Delivery latitude offsets at longitude 0: 1° ≈ 111.19 km.
     private const double NearLat = 0.045;    // ~5 km  -> under 10 km zone

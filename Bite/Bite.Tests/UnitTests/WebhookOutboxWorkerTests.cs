@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.UnitTests;
 
 public class WebhookOutboxWorkerTests

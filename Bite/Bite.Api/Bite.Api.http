@@ -104,7 +104,7 @@ Content-Type: application/json
 # ============================================================
 
 ### Get Menu of a Restaurant (US 6)
-GET {{HostAddress}}/api/restaurants/1/menu
+GET {{HostAddress}}/api/restaurants/9/menu
 Accept: application/json
 
 ###
