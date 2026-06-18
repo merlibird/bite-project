@@ -12,6 +12,8 @@ derzeit am Markt befindlichen Systeme (zumindest technologisch) alt aussehen lä
 #### Starten der Db
 Analog zu Übung mit dem Befehl "docker compose up" im Order /db-sqlserver/
 
+Dabei werden zwei Datenbanken angelegt: **`BiteDb`** (mit Beispieldaten, von der API genutzt) und **`BiteTestDb`** (leer, nur Schema – die Integrationstests laufen ausschließlich gegen diese und lassen die Beispieldaten unberührt).
+
 `[@Tarik: Setup finalisieren]`
 
 ## Technischer Aufbau
@@ -45,7 +47,7 @@ Microsoft SQL Server über Docker Compose mit einem erweiterten Schema für Best
 
 ## Datenbankmodell
 
-  Das erweiterte Schema BiteTestDb umfasst nun neben den Stammdaten aus Ausbaustufe 1 (Restaurants, Menüs) auch die gesamte Transaktionslogik:
+  Das erweiterte Schema (identisch in `BiteDb` und der Test-DB `BiteTestDb`) umfasst nun neben den Stammdaten aus Ausbaustufe 1 (Restaurants, Menüs) auch die gesamte Transaktionslogik:
    - CustomerOrder & OrderItem: Speicherung von Bestellungen inkl. historisierter Preise zum Zeitpunkt der Bestellung.
    - OrderStatusToken: Verwaltung von sicheren Einmal-Links für Statusübergänge.
    - WebhookOutbox: Persistente Speicherung von ausgehenden Nachrichten zur Gewährleistung der "At-Least-Once"-Zustellung.

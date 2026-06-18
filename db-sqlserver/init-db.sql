@@ -1,21 +1,22 @@
 -- ============================================================
 -- init-db.sql
--- Creates the database "BiteTestDb" and all necessary tables for the Bite project.
+-- Creates the database "$(DbName)" and all necessary tables for the Bite project.
+-- The target database name is passed in via the sqlcmd variable DbName.
 -- Called via sqlcmd:
---   sqlcmd -S db -U sa -P <password> -C -i init-db.sql
+--   sqlcmd -S db -U sa -P <password> -C -v DbName=BiteTestDb -i init-db.sql
 -- ============================================================
 
--- 1. Check if the database 'BiteTestDb' exists
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'BiteTestDb')
+-- 1. Check if the database '$(DbName)' exists
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'$(DbName)')
 BEGIN
-    CREATE DATABASE BiteTestDb;
-    PRINT 'Database "BiteTestDb" created.';
+    CREATE DATABASE [$(DbName)];
+    PRINT 'Database "$(DbName)" created.';
 END
 ELSE
-    PRINT 'Database "BiteTestDb" already exists.';
+    PRINT 'Database "$(DbName)" already exists.';
 GO
 
-USE BiteTestDb;
+USE [$(DbName)];
 GO
 
 -- 2. Delete existing tables (if any)

@@ -28,7 +28,8 @@ services:
       - ./init-db.sql:/usr/src/app/init-db.sql
     command: >
       bash -c "
-      /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P ${Sa_Password:-Swk5-rocks!} -C -i /usr/src/app/init-db.sql
+      /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P ${Sa_Password:-Swk5-rocks!} -C -v DbName=BiteDb -i /usr/src/app/init-db.sql &&
+      /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P ${Sa_Password:-Swk5-rocks!} -C -v DbName=BiteTestDb -i /usr/src/app/init-db.sql
       "
 
   fill-data:
@@ -42,5 +43,5 @@ services:
       - ./fill-data.sql:/usr/src/app/fill-data.sql
     command: >
       bash -c "
-      /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P ${Sa_Password:-Swk5-rocks!} -C -i /usr/src/app/fill-data.sql
+      /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P ${Sa_Password:-Swk5-rocks!} -C -v DbName=BiteDb -i /usr/src/app/fill-data.sql
       "

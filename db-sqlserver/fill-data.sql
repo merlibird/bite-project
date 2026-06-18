@@ -1,9 +1,10 @@
 -- ============================================================
 -- fill-data.sql
--- Fills the BiteTestDb with sample data (restaurants, menu items, etc.).
+-- Fills the "$(DbName)" database with sample data (restaurants, menu items, etc.).
+-- The target database name is passed in via the sqlcmd variable DbName.
 -- ============================================================
 
-USE BiteTestDb;
+USE [$(DbName)];
 GO
 
 IF EXISTS (SELECT 1 FROM Restaurant)
