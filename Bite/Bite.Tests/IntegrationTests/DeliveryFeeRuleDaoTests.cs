@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.IntegrationTests;
 
 [Collection("Database")]
@@ -28,56 +29,20 @@ public class DeliveryFeeRuleDaoTests : IAsyncLifetime
     // beforeEach --> clear all tables in FK-safe order
     public async Task InitializeAsync()
     {
+        await template.ExecuteAsync("delete from OrderStatusToken", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OrderItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from CustomerOrder", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItemMenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OpeningHourSlot", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from DeliveryFeeRule", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from DeliveryZone", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }
 
-    // afterEach --> do nothing
     public Task DisposeAsync() => Task.CompletedTask;
-
-    // -------------------------------------------------------------------------
-    // FindByRestaurantIdAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task FindByRestaurantIdAsync_NonExistingRestaurantId_ReturnsEmptyList()
-    {
-        var result = await dao.FindByRestaurantIdAsync(69420);
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task FindByRestaurantIdAsync_TwoRulesForRestaurant_ReturnsBothRules()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId, maxOrderValue: 20.00m));
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId, maxOrderValue: 50.00m));
-
-        var result = await dao.FindByRestaurantIdAsync(restaurantId);
-
-        Assert.Equal(2, result.Count());
-    }
-
-    [Fact]
-    public async Task FindByRestaurantIdAsync_OnlyReturnsRulesForGivenRestaurant()
-    {
-        int restaurantId1 = await SeedRestaurantAsync();
-        int restaurantId2 = await SeedRestaurantAsync();
-        int zoneId1 = await SeedDeliveryZoneAsync(restaurantId1);
-        int zoneId2 = await SeedDeliveryZoneAsync(restaurantId2);
-
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId1, maxOrderValue: 20.00m, deliveryFee: 2.99m));
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId2, maxOrderValue: 50.00m, deliveryFee: 4.99m));
-
-        var result = await dao.FindByRestaurantIdAsync(restaurantId1);
-
-        Assert.Single(result);
-        Assert.Equal(2.99m, result.First().DeliveryFee);
-    }
 
     // -------------------------------------------------------------------------
     // FindByRestaurantIdAndZoneIdAsync
@@ -163,89 +128,6 @@ public class DeliveryFeeRuleDaoTests : IAsyncLifetime
     }
 
     // -------------------------------------------------------------------------
-    // UpdateAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task UpdateAsync_ExistingDeliveryFeeRule_ReturnsTrue()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId));
-        var rule = (await dao.FindByRestaurantIdAsync(restaurantId)).Single();
-
-        var result = await dao.UpdateAsync(rule);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_NonExistingId_ReturnsFalse()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-        // not using MakeDeliveryFeeRule() to avoid inserting a new rule with id=0
-        var ghost = new DeliveryFeeRule(69420, zoneId, 20.00m, 2.99m);
-
-        var result = await dao.UpdateAsync(ghost);
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ExistingDeliveryFeeRule_PersistsChanges()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-        decimal updatedDeliveryFee = 9.99m;
-
-        await dao.InsertAsync(MakeDeliveryFeeRule(zoneId));
-        var rule = (await dao.FindByRestaurantIdAsync(restaurantId)).Single();
-        rule.DeliveryFee = updatedDeliveryFee;
-
-        await dao.UpdateAsync(rule);
-
-        var updated = (await dao.FindByRestaurantIdAsync(restaurantId)).Single();
-        Assert.Equal(updatedDeliveryFee, updated.DeliveryFee);
-    }
-
-    // -------------------------------------------------------------------------
-    // DeleteAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_ReturnsTrue()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-        var id = await dao.InsertAsync(MakeDeliveryFeeRule(zoneId));
-
-        var result = await dao.DeleteAsync(id);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_CanNoLongerBeFound()
-    {
-        int restaurantId = await SeedRestaurantAsync();
-        int zoneId = await SeedDeliveryZoneAsync(restaurantId);
-        var id = await dao.InsertAsync(MakeDeliveryFeeRule(zoneId));
-        await dao.DeleteAsync(id);
-
-        var result = await dao.FindByRestaurantIdAsync(restaurantId);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_NonExistingId_ReturnsFalse()
-    {
-        var result = await dao.DeleteAsync(69420);
-        Assert.False(result);
-    }
-
-    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -263,7 +145,7 @@ public class DeliveryFeeRuleDaoTests : IAsyncLifetime
     {
         int addressId = await SeedAddressAsync();
         return await restaurantDao.InsertAsync(
-            new Restaurant(0, "Testrestaurant", addressId, "https://example.com/webhook"));
+            new Restaurant(0, "Testrestaurant", addressId, "https://example.com/webhook", Guid.NewGuid().ToString()));
     }
 
     private async Task<int> SeedDeliveryZoneAsync(int restaurantId) =>

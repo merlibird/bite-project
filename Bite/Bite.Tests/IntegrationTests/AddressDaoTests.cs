@@ -9,6 +9,7 @@ using System.Reflection.Emit;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.IntegrationTests;
 
 [Collection("Database")]
@@ -26,13 +27,19 @@ public class AddressDaoTests : IAsyncLifetime
     // beforeEach --> clear the Address table
     public async Task InitializeAsync()
     {
+        await template.ExecuteAsync("delete from OrderStatusToken", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OrderItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from CustomerOrder", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItemMenuCategory", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OpeningHourSlot", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryFeeRule", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryZone", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }
 
-    // afterEach --> do nothing
     public Task DisposeAsync() => Task.CompletedTask;
 
     // -------------------------------------------------------------------------
@@ -103,81 +110,6 @@ public class AddressDaoTests : IAsyncLifetime
         var id2 = await dao.InsertAsync(MakeAddress("Nebenstraße", "2"));
 
         Assert.NotEqual(id1, id2);
-    }
-
-    // -------------------------------------------------------------------------
-    // UpdateAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task UpdateAsync_ExistingAddress_ReturnsTrue()
-    {
-        var id = await dao.InsertAsync(MakeAddress());
-        var address = await dao.FindByIdAsync(id);
-
-        var result = await dao.UpdateAsync(address!);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_NonExistingId_ReturnsFalse()
-    {
-        // not using MakeAddress() to avoid inserting a new address with id=0
-        var ghost = new Address(69420, "Ghost Street", "0", "00000", "Nowhere", "Noland", 0, 0, null);
-
-        var result = await dao.UpdateAsync(ghost);
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ExistingAddress_PersistsChanges()
-    {   
-        string additionalInfo = "Top 3";
-
-        var id = await dao.InsertAsync(MakeAddress());
-        var address = await dao.FindByIdAsync(id);
-        address!.AdditionalInfo = additionalInfo;
-
-        await dao.UpdateAsync(address);
-
-        var updated = await dao.FindByIdAsync(id);
-
-        Assert.Equal(additionalInfo, updated!.AdditionalInfo);
-    }
-
-    // -------------------------------------------------------------------------
-    // DeleteAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_ReturnsTrue()
-    {
-        var id = await dao.InsertAsync(MakeAddress());
-        var address = await dao.FindByIdAsync(id);
-
-        var result = await dao.DeleteAsync(address!.Id);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_CanNoLongerBeFound()
-    {
-        var id = await dao.InsertAsync(MakeAddress());
-        await dao.DeleteAsync(id);
-
-        var result = await dao.FindByIdAsync(id);
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_NonExistingId_ReturnsFalse()
-    {
-        var result = await dao.DeleteAsync(69420);
-        Assert.False(result);
     }
 
     // -------------------------------------------------------------------------

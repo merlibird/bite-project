@@ -39,6 +39,7 @@ public class DefaultConnectionFactory : IConnectionFactory
             throw new InvalidOperationException("dbProviderFactory.CreateConnection() returns null");
         }
         connection.ConnectionString = this.ConnectionString;
+        
         await connection.OpenAsync(cancellationToken);
 
         return connection;

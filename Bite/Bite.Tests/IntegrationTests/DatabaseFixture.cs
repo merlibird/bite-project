@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.IntegrationTests;
 
 public class DatabaseFixture : IAsyncLifetime
@@ -19,6 +20,5 @@ public class DatabaseFixture : IAsyncLifetime
         ConnectionFactory = DefaultConnectionFactory.FromConfiguration(configuration, "BiteDbConnection", "ProviderName");
     }
 
-    // afterAll --> do nothing
     public Task DisposeAsync() => Task.CompletedTask; 
 }

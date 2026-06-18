@@ -32,6 +32,11 @@ public class DeliveryZoneDao(IConnectionFactory connectionFactory) : IDeliveryZo
             cancellationToken);
     }
 
+    public async Task<IEnumerable<DeliveryZone>> FindAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync("select * from DeliveryZone", MapRowToDeliveryZone, [], cancellationToken);
+    }
+
     public async Task<int> InsertAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
@@ -51,31 +56,14 @@ public class DeliveryZoneDao(IConnectionFactory connectionFactory) : IDeliveryZo
             cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(DeliveryZone deliveryZone, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
     {
         return await template.ExecuteAsync(
-            """
-            update DeliveryZone
-            set min_order_value=@minOrderValue, max_distance=@maxDistance
-            where id=@id
-            """,
+            "delete from DeliveryZone where restaurant_id=@restaurantId",
             [
-            new QueryParameter("@minOrderValue", deliveryZone.MinOrderValue),
-            new QueryParameter("@maxDistance", deliveryZone.MaxDistance),
-            new QueryParameter("@id", deliveryZone.Id)
+            new QueryParameter("@restaurantId", restaurantId)
             ],
             cancellationToken
-        ) == 1;
-    }
-
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            "delete from DeliveryZone where id=@id",
-            [
-            new QueryParameter("@id", id)
-            ],
-            cancellationToken
-        ) == 1;
+        );
     }
 }

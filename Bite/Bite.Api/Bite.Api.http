@@ -1,6 +1,214 @@
-@Bite.Api_HostAddress = http://localhost:5126
+@HostAddress = http://localhost:5126
 
-GET {{Bite.Api_HostAddress}}/weatherforecast/
+# API Keys (Hashed in DB, use raw values in header)
+@ApiKeyNim = nimmersatt-api-key-2026
+@ApiKeyBur = burger-bude-api-key-2026
+@ApiKeySak = sakura-sushi-api-key-2026
+
+# Suchparameter (US 5) – zum Testen hier anpassen
+@searchLatitude = 48.3692
+@searchLongitude = 14.5125
+@searchOpenNow = false
+@searchCount = 10
+
+# ============================================================
+# 1. RESTAURANTS CONTROLLER
+# ============================================================
+
+### Search Restaurants (US 5)
+GET {{HostAddress}}/api/Restaurants?latitude={{searchLatitude}}&longitude={{searchLongitude}}&openNow={{searchOpenNow}}&count={{searchCount}}
 Accept: application/json
 
 ###
+
+### Register a new Restaurant (US 1)
+# Image upload only possible via Swagger UI (http://localhost:5126/swagger)
+# VS .http-Runner does not support file upload.
+POST {{HostAddress}}/api/Restaurants
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="Name"
+
+Pizzaria Test
+--WebAppBoundary
+Content-Disposition: form-data; name="Street"
+
+Teststraße
+--WebAppBoundary
+Content-Disposition: form-data; name="Number"
+
+1
+--WebAppBoundary
+Content-Disposition: form-data; name="ZipCode"
+
+4020
+--WebAppBoundary
+Content-Disposition: form-data; name="City"
+
+Linz
+--WebAppBoundary
+Content-Disposition: form-data; name="Country"
+
+Austria
+--WebAppBoundary
+Content-Disposition: form-data; name="Longitude"
+
+14.2860
+--WebAppBoundary
+Content-Disposition: form-data; name="Latitude"
+
+48.3060
+--WebAppBoundary
+Content-Disposition: form-data; name="WebhookUrl"
+
+https://webhook.site/test
+--WebAppBoundary
+Content-Disposition: form-data; name="OpeningHoursJson"
+Content-Type: application/json
+
+[
+  { "DayOfWeek": 1, "OpenTime": "11:00:00", "CloseTime": "22:00:00" }
+]
+--WebAppBoundary
+Content-Disposition: form-data; name="CoverImage"; filename="upload_test_photo.jpg"
+Content-Type: image/jpeg
+
+< ../../docs/images/upload_test_photo.jpg
+--WebAppBoundary--
+
+###
+
+### Update Delivery Conditions (US 3)
+PUT {{HostAddress}}/api/Restaurants/1/delivery-conditions
+X-Api-Key: {{ApiKeyNim}}
+Content-Type: application/json
+
+[
+  {
+    "maxDistance": 15.0,
+    "minOrderValue": 15.0,
+    "feeRules": [
+      {
+        "maxOrderValue": 999.0,
+        "deliveryFee": 0.0
+      }
+    ]
+  }
+]
+
+###
+
+# ============================================================
+# 2. MENU CONTROLLER
+# ============================================================
+
+### Get Menu of a Restaurant (US 6)
+GET {{HostAddress}}/api/restaurants/1/menu
+Accept: application/json
+
+###
+
+### Update/Replace Restaurant Menu (US 4)
+PUT {{HostAddress}}/api/restaurants/1/menu
+X-Api-Key: {{ApiKeyNim}}
+Content-Type: application/json
+
+{
+  "categories": [
+    {
+      "name": "Pizza",
+      "items": [
+        {
+          "name": "Margherita",
+          "description": "Classic Tomato & Cheese",
+          "price": 9.50,
+          "isActive": true
+        },
+        {
+          "name": "Diavola",
+          "description": "Spicy Salami",
+          "price": 11.50,
+          "isActive": true
+        }
+      ]
+    }
+  ]
+}
+
+###
+
+# ============================================================
+# 3. ORDERS CONTROLLER
+# ============================================================
+
+### Calculate Order Price Preview (US 7)
+POST {{HostAddress}}/api/restaurants/1/orders/price
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 2
+    }
+  ],
+  "deliveryAddress": {
+    "street": "Softwarepark",
+    "number": "23",
+    "zipCode": "4232",
+    "city": "Hagenberg",
+    "country": "Austria",
+    "latitude": 48.3692,
+    "longitude": 14.5125
+  }
+}
+
+###
+
+### Place a Binding Order (US 8)
+POST {{HostAddress}}/api/restaurants/1/orders
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 3
+    }
+  ],
+  "deliveryAddress": {
+    "street": "Softwarepark",
+    "number": "23",
+    "zipCode": "4232",
+    "city": "Hagenberg",
+    "country": "Austria",
+    "latitude": 48.3692,
+    "longitude": 14.5125
+  }
+}
+
+###
+
+### Get Order Status (US 12)
+GET {{HostAddress}}/api/Orders/7BP83YZR/status
+Accept: application/json
+
+###
+
+### Change Order Status (US 10)
+PATCH {{HostAddress}}/api/Orders/7BP83YZR
+X-Api-Key: {{ApiKeyNim}}
+Content-Type: application/json
+
+{
+  "status": "IN_PREPARATION"
+}
+
+###
+
+### Apply Status Token via Link (US 11)
+# Die URL muss das Format /api/orders/{orderCode}/status-change/{token} haben.
+GET {{HostAddress}}/api/orders/MC9QEPB6/status-change/SGVsbG8tV29ybGQtaW4tQmFzZTY0VXJsLWZvcm1hdC0xMjM
+X-Api-Key: {{ApiKeyNim}}
+Accept: application/json

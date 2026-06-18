@@ -67,15 +67,16 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 
     private static object NullableParam(object? value) => value ?? DBNull.Value;
 
-    public async Task<IEnumerable<MenuItem>> FindAllAsync(CancellationToken cancellationToken = default)
+    public async Task<MenuItem?> FindByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await template.QueryAsync(
+        return await template.QuerySingleAsync(
             $"""
             {MenuItemSelect}
+            where mi.id = @id
             {MenuItemGroupBy}
             """,
             MapRowToMenuItem,
-            [],
+            [new QueryParameter("@id", id)],
             cancellationToken);
     }
 
@@ -89,24 +90,6 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
             """,
             MapRowToMenuItem,
             [new QueryParameter("@restaurantId", restaurantId)],
-            cancellationToken);
-    }
-
-    public async Task<IEnumerable<MenuItem>> FindAllByMenuCategoryIdAsync(int menuCategoryId, CancellationToken cancellationToken = default)
-    {
-        return await template.QueryAsync(
-            $"""
-            {MenuItemSelect}
-            where exists (
-                select 1
-                from MenuItemMenuCategory mimcFilter
-                where mimcFilter.menu_item_id = mi.id
-                    and mimcFilter.menu_category_id = @menuCategoryId
-            )
-            {MenuItemGroupBy}
-            """,
-            MapRowToMenuItem,
-            [new QueryParameter("@menuCategoryId", menuCategoryId)],
             cancellationToken);
     }
 
@@ -219,5 +202,53 @@ public class MenuItemDao(IConnectionFactory connectionFactory) : IMenuItemDao
 
         scope.Complete();
         return assignedCount == expectedCount;
+    }
+
+    public async Task<int> DeleteAllByRestaurantIdAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        await template.ExecuteAsync(
+            "delete from MenuItemMenuCategory where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        int deletedItems = await template.ExecuteAsync(
+            "delete from MenuItem where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        scope.Complete();
+        return deletedItems;
+    }
+
+    public async Task<bool> DeactivateAndClearMenuAsync(int restaurantId, CancellationToken cancellationToken = default)
+    {
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        // 1. Remove mapping between items and categories for this restaurant
+        await template.ExecuteAsync(
+            "delete from MenuItemMenuCategory where restaurant_id = @restaurantId;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        // 2. Try to delete items that have NO orders
+        await template.ExecuteAsync(
+            """
+            delete from MenuItem 
+            where restaurant_id = @restaurantId 
+            and not exists (select 1 from OrderItem where menu_item_id = MenuItem.id);
+            """,
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        // 3. Deactivate remaining items (those with orders)
+        await template.ExecuteAsync(
+            "update MenuItem set is_active = 0 where restaurant_id = @restaurantId and is_active = 1;",
+            [new QueryParameter("@restaurantId", restaurantId)],
+            cancellationToken);
+
+        scope.Complete();
+        return true;
     }
 }

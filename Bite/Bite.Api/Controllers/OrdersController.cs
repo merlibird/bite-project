@@ -1,0 +1,128 @@
+using Bite.Api.Auth;
+using Bite.Api.Dtos;
+using Bite.Api.Dtos.Mappers;
+using Bite.Domain;
+using Bite.Services.Common;
+using Bite.Services.Interface;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Bite.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController(IOrderService orderService) : ApiControllerBase
+{
+    [HttpGet("{orderCode}/status")]
+    public async Task<ActionResult<OrderStatusResponse>> GetStatus([FromRoute] string orderCode, CancellationToken cancellationToken)
+    {
+        var result = await orderService.GetStatusAsync(orderCode, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(new OrderStatusResponse
+        {
+            OrderCode = orderCode,
+            Status = result.Data
+        });
+    }
+
+    [ApiKeyAuth]
+    [HttpPatch("{orderCode}")]
+    public async Task<ActionResult<OrderStatusResponse>> ChangeStatus(
+        [FromRoute] string orderCode,
+        [FromBody] ChangeOrderStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        int restaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
+
+        var result = await orderService.ChangeStatusAsync(
+            orderCode,
+            restaurantId,
+            request.Status,
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(new OrderStatusResponse
+        {
+            OrderCode = orderCode,
+            Status = result.Data
+        });
+    }
+
+    [ApiKeyAuth]
+    [HttpGet("{orderCode}/status-change/{token}")]
+    public async Task<ActionResult<OrderStatusResponse>> ApplyStatusToken(
+        [FromRoute] string orderCode,
+        [FromRoute] string token,
+        CancellationToken cancellationToken)
+    {
+        int restaurantId = (int)HttpContext.Items[ApiKeyAuthAttribute.RestaurantIdItem]!;
+
+        var result = await orderService.ApplyStatusTokenAsync(orderCode, token, restaurantId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(new OrderStatusResponse
+        {
+            OrderCode = orderCode,
+            Status = result.Data
+        });
+    }
+
+    [HttpPost("/api/restaurants/{restaurantId}/orders/price")]
+    public async Task<ActionResult<Dtos.OrderPriceResponse>> CalculatePrice(
+        [FromRoute] int restaurantId,
+        [FromBody] OrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await orderService.CalculatePriceAsync(
+            restaurantId,
+            request.Items.ToItemTuples(),
+            (request.DeliveryAddress.Latitude, request.DeliveryAddress.Longitude),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(new Dtos.OrderPriceResponse
+        {
+            Subtotal = result.Data!.Subtotal,
+            DeliveryFee = result.Data!.DeliveryFee
+        });
+    }
+
+    [HttpPost("/api/restaurants/{restaurantId}/orders")]
+    public async Task<IActionResult> PlaceOrder(
+        [FromRoute] int restaurantId,
+        [FromBody] OrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await orderService.PlaceOrderAsync(
+            restaurantId,
+            request.Items.ToItemTuples(),
+            request.DeliveryAddress.ToDomain(),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleFailure(result);
+        }
+
+        return CreatedAtAction(nameof(GetStatus), new { orderCode = result.Data }, new PlaceOrderResponse
+        {
+            OrderCode = result.Data!
+        });
+    }
+}

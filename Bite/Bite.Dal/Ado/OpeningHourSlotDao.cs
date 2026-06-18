@@ -33,6 +33,11 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             cancellationToken);
     }
 
+    public async Task<IEnumerable<OpeningHourSlot>> FindAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await template.QueryAsync("select * from OpeningHourSlot", MapRowToOpeningHourSlot, [], cancellationToken);
+    }
+
     public async Task<int> InsertAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
     {
         return await template.QuerySingleAsync(
@@ -53,32 +58,4 @@ public class OpeningHourSlotDao(IConnectionFactory connectionFactory) : IOpening
             cancellationToken);
     }
 
-    public async Task<bool> UpdateAsync(OpeningHourSlot openingHourSlot, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            """
-            update OpeningHourSlot
-            set day_of_week=@dayOfWeek, open_time=@openTime, close_time=@closeTime
-            where id=@id
-            """,
-            [
-            new QueryParameter("@dayOfWeek", openingHourSlot.DayOfWeek),
-            new QueryParameter("@openTime", openingHourSlot.OpenTime),
-            new QueryParameter("@closeTime", openingHourSlot.CloseTime),
-            new QueryParameter("@id", openingHourSlot.Id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
-
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await template.ExecuteAsync(
-            "delete from OpeningHourSlot where id=@id",
-            [
-            new QueryParameter("@id", id)
-            ],
-            cancellationToken
-        ) == 1;
-    }
 }

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+// This test class was created with the help and assistance of AI 
 namespace Bite.Tests.IntegrationTests;
 
 [Collection("Database")]
@@ -26,13 +27,19 @@ public class RestaurantDaoTests : IAsyncLifetime
     // beforeEach --> clear tables and insert a valid address for FK references
     public async Task InitializeAsync()
     {
+        await template.ExecuteAsync("delete from OrderStatusToken", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OrderItem", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from CustomerOrder", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from MenuItemMenuCategory", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuItem", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from MenuCategory", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from OpeningHourSlot", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryFeeRule", Array.Empty<QueryParameter>());
+        await template.ExecuteAsync("delete from DeliveryZone", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Restaurant", Array.Empty<QueryParameter>());
         await template.ExecuteAsync("delete from Address", Array.Empty<QueryParameter>());
     }
 
-    // afterEach --> do nothing
     public Task DisposeAsync() => Task.CompletedTask;
 
     // -------------------------------------------------------------------------
@@ -125,86 +132,6 @@ public class RestaurantDaoTests : IAsyncLifetime
     }
 
     // -------------------------------------------------------------------------
-    // UpdateAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task UpdateAsync_ExistingRestaurant_ReturnsTrue()
-    {
-        int addressId = await SeedAddressAsync();
-        var id = await dao.InsertAsync(MakeRestaurant("Altes Gasthaus", addressId));
-        var restaurant = await dao.FindByIdAsync(id);
-
-        var result = await dao.UpdateAsync(restaurant!);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_NonExistingId_ReturnsFalse()
-    {
-        int addressId = await SeedAddressAsync();
-        // not using MakeRestaurant() to avoid inserting a new restaurant with id=0
-        var ghost = new Restaurant(69420, "Ghost Restaurant", addressId, "https://ghost.example.com/webhook");
-
-        var result = await dao.UpdateAsync(ghost);
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ExistingRestaurant_PersistsChanges()
-    {
-        int addressId = await SeedAddressAsync();
-        string updatedName = "Neues Gasthaus";
-
-        var id = await dao.InsertAsync(MakeRestaurant("Altes Gasthaus", addressId));
-        var restaurant = await dao.FindByIdAsync(id);
-        restaurant!.Name = updatedName;
-
-        await dao.UpdateAsync(restaurant);
-
-        var updated = await dao.FindByIdAsync(id);
-
-        Assert.Equal(updatedName, updated!.Name);
-    }
-
-    // -------------------------------------------------------------------------
-    // DeleteAsync
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_ReturnsTrue()
-    {
-        int addressId = await SeedAddressAsync();
-        var id = await dao.InsertAsync(MakeRestaurant("Zum Löwen", addressId));
-        var restaurant = await dao.FindByIdAsync(id);
-
-        var result = await dao.DeleteAsync(restaurant!.Id);
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ExistingId_CanNoLongerBeFound()
-    {
-        int addressId = await SeedAddressAsync();
-        var id = await dao.InsertAsync(MakeRestaurant("Zum Löwen", addressId));
-        await dao.DeleteAsync(id);
-
-        var result = await dao.FindByIdAsync(id);
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_NonExistingId_ReturnsFalse()
-    {
-        var result = await dao.DeleteAsync(69420);
-        Assert.False(result);
-    }
-
-    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -212,8 +139,9 @@ public class RestaurantDaoTests : IAsyncLifetime
         string name,
         int addressId,
         string webhookUrl = "example.com/webhook",
-        string? titleImagePath = null) =>
-            new Restaurant(0, name, addressId, webhookUrl, titleImagePath);
+        string? titleImagePath = null,
+        string? apiKey = null) =>
+            new Restaurant(0, name, addressId, webhookUrl, apiKey ?? Guid.NewGuid().ToString(), titleImagePath);
 
     private async Task<int> SeedAddressAsync() =>
         await addressDao.InsertAsync(
